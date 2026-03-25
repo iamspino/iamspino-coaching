@@ -10,6 +10,11 @@
 <title>IamSpino Coaching</title>
 <link rel="apple-touch-icon" href="icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK compat (funziona sia in Electron che in browser) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -243,9 +248,8 @@ table.wgrid .kgl{color:var(--muted);font-size:10px;text-align:left;padding:4px 6
 <div class="toast" id="toast"></div>
 
 
-<script type="module">
+<script>
 
-// ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAb6xP3pt3_CjdDxWhXsAIbhzz1va_-aN4",
   authDomain: "iamspino-coaching.firebaseapp.com",
@@ -255,13 +259,11 @@ const FIREBASE_CONFIG = {
   appId: "1:209519262391:web:dcdec856fa022d7e60eb32"
 };
 
-// ── DB.JS — Firebase + localStorage fallback ──────────────────────────────────
 const DB = (() => {
-  // LocalStorage as cache/fallback
-  const KEY = 'iamspino_v1';
+  const KEY = "iamspino_v1";
   let _d = null;
-  let _db = null;  // Firestore instance
-  let _syncEnabled = false;
+  let _firestore = null;
+  let _synced = false;
 
   function defaults() { return { clienti: [], pagamenti: [] }; }
 
@@ -276,88 +278,80 @@ const DB = (() => {
 
   function saveLocal() {
     try { localStorage.setItem(KEY, JSON.stringify(_d)); } catch(e) {}
-    const dot = document.getElementById('dot');
-    if (dot) dot.classList.remove('dirty');
+    const dot = document.getElementById("dot");
+    if (dot) dot.classList.remove("dirty");
   }
 
-  // ── FIREBASE SYNC ────────────────────────────────────────────────────────────
-  async function initFirebase() {
+  function showSync(ok) {
+    const dot = document.getElementById("dot");
+    if (!dot) return;
+    dot.style.background = ok ? "#4caf50" : "#f5c518";
+    dot.title = ok ? "Sincronizzato con Firebase ☁️" : "Solo locale";
+  }
+
+  function initFirebase() {
     try {
-      const { initializeApp }        = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
-      const { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot }
-                                     = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
-      const fbApp = initializeApp(FIREBASE_CONFIG);
-      _db = getFirestore(fbApp);
-      _syncEnabled = true;
+      if (typeof firebase === "undefined") { showSync(false); return; }
+      firebase.initializeApp(FIREBASE_CONFIG);
+      _firestore = firebase.firestore();
+      _synced = true;
+      showSync(true);
 
-      // Pull all data from Firebase on startup
-      await pullFromFirebase(getFirestore, doc, collection, getDocs);
-
-      // Listen for real-time changes
-      const clientiRef = collection(_db, 'clienti');
-      onSnapshot(clientiRef, (snap) => {
-        _d.clienti = [];
-        snap.forEach(d => _d.clienti.push({ id: d.id, ...d.data() }));
-        saveLocal();
-        if (typeof refreshClientSelector === 'function') refreshClientSelector();
-        if (typeof renderPage === 'function') renderPage();
+      // Migrazione: se Firebase è vuoto ma localStorage ha dati, carica su Firebase
+      _firestore.collection("clienti").get().then(snap0 => {
+        if (snap0.empty && _d.clienti.length > 0) {
+          console.log("Migrazione dati locali su Firebase...");
+          const batch = _firestore.batch();
+          _d.clienti.forEach(cl => {
+            const clean = JSON.parse(JSON.stringify(cl));
+            batch.set(_firestore.collection("clienti").doc(cl.id), clean);
+          });
+          _d.pagamenti.forEach(p => {
+            const clean = JSON.parse(JSON.stringify(p));
+            batch.set(_firestore.collection("pagamenti").doc(p.id), clean);
+          });
+          batch.commit().then(() => console.log("Migrazione completata ✓"));
+        }
       });
 
-      const pagsRef = collection(_db, 'pagamenti');
-      onSnapshot(pagsRef, (snap) => {
-        _d.pagamenti = [];
-        snap.forEach(d => _d.pagamenti.push({ id: d.id, ...d.data() }));
+      // Real-time listener clienti
+      _firestore.collection("clienti").onSnapshot(snap => {
+        _d.clienti = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        saveLocal();
+        if (typeof refreshClientSelector === "function") refreshClientSelector();
+        if (typeof renderPage === "function") renderPage();
+      });
+
+      // Real-time listener pagamenti
+      _firestore.collection("pagamenti").onSnapshot(snap => {
+        _d.pagamenti = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         saveLocal();
       });
 
-      showSyncStatus(true);
     } catch(e) {
-      console.warn('Firebase non disponibile, uso locale:', e);
-      showSyncStatus(false);
+      console.warn("Firebase init failed:", e);
+      showSync(false);
     }
   }
 
-  async function pullFromFirebase(getFirestore, doc, collection, getDocs) {
-    try {
-      const { collection: col, getDocs: gd } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
-      const clientiSnap = await gd(col(_db, 'clienti'));
-      const pagsSnap    = await gd(col(_db, 'pagamenti'));
-      _d.clienti   = clientiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      _d.pagamenti = pagsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      saveLocal();
-    } catch(e) { console.warn('Pull failed:', e); }
+  function push(col, id, data) {
+    if (!_synced || !_firestore) return;
+    // Clean undefined values for Firestore
+    const clean = JSON.parse(JSON.stringify(data));
+    _firestore.collection(col).doc(id).set(clean).catch(e => console.warn("Push error:", e));
   }
 
-  function showSyncStatus(ok) {
-    const dot = document.getElementById('dot');
-    if (!dot) return;
-    dot.title = ok ? 'Sincronizzato con Firebase ☁️' : 'Offline — dati locali';
-    dot.style.background = ok ? '#4caf50' : '#f5c518';
+  function remove(col, id) {
+    if (!_synced || !_firestore) return;
+    _firestore.collection(col).doc(id).delete().catch(e => console.warn("Delete error:", e));
   }
 
-  async function pushToFirebase(collection, id, data) {
-    if (!_syncEnabled || !_db) return;
-    try {
-      const { doc, setDoc, collection: col } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
-      await setDoc(doc(_db, collection, id), data);
-    } catch(e) { console.warn('Push failed:', e); }
-  }
-
-  async function deleteFromFirebase(collection, id) {
-    if (!_syncEnabled || !_db) return;
-    try {
-      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
-      await deleteDoc(doc(_db, collection, id));
-    } catch(e) { console.warn('Delete failed:', e); }
-  }
-
-  // ── SAVE ─────────────────────────────────────────────────────────────────────
   function save() { saveLocal(); }
 
   let _t = null;
   function delaySave() {
-    const dot = document.getElementById('dot');
-    if (dot) dot.classList.add('dirty');
+    const dot = document.getElementById("dot");
+    if (dot) dot.classList.add("dirty");
     clearTimeout(_t);
     _t = setTimeout(save, 700);
   }
@@ -365,115 +359,104 @@ const DB = (() => {
   function get() { if (!_d) loadLocal(); return _d; }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
-  // ── CLIENTS ──────────────────────────────────────────────────────────────────
   function getClients()  { return get().clienti; }
   function getClient(id) { return get().clienti.find(c => c.id === id) || null; }
 
   function addClient(fields) {
     const c = { id: uid(), createdAt: Date.now(), schede:[], misure:[],
-      nome:'', cognome:'', sesso:'', dataNascita:'', telefono:'', email:'',
-      obiettivo:'', livello:'', stato:'attivo', tipoAbb:'', inizioAbb:'',
-      scadenzaAbb:'', altezza:'', anamnesi:'', ...fields };
+      nome:"", cognome:"", sesso:"", dataNascita:"", telefono:"", email:"",
+      obiettivo:"", livello:"", stato:"attivo", tipoAbb:"", inizioAbb:"",
+      scadenzaAbb:"", altezza:"", anamnesi:"", ...fields };
     get().clienti.push(c);
-    save();
-    pushToFirebase('clienti', c.id, c);
-    return c;
+    save(); push("clienti", c.id, c); return c;
   }
 
   function updateClient(id, fields) {
     const c = getClient(id); if (!c) return;
     Object.assign(c, fields);
-    save();
-    pushToFirebase('clienti', id, c);
+    save(); push("clienti", id, c);
   }
 
   function deleteClient(id) {
     get().clienti   = get().clienti.filter(c => c.id !== id);
     get().pagamenti = get().pagamenti.filter(p => p.clienteId !== id);
-    save();
-    deleteFromFirebase('clienti', id);
+    save(); remove("clienti", id);
   }
 
-  // ── SCHEDE ───────────────────────────────────────────────────────────────────
   function getSchede(cid) { return getClient(cid)?.schede || []; }
 
   function addScheda(cid, fields) {
     const c = getClient(cid); if (!c) return null;
     if (!Array.isArray(c.schede)) c.schede = [];
-    const s = { id: uid(), createdAt: Date.now(), label:'A', riscaldamento:'', note:'', esercizi:[], ...fields };
-    c.schede.push(s); save(); pushToFirebase('clienti', cid, c); return s;
+    const s = { id: uid(), createdAt: Date.now(), label:"A", riscaldamento:"", note:"", esercizi:[], ...fields };
+    c.schede.push(s); save(); push("clienti", cid, c); return s;
   }
 
   function updateScheda(cid, sid, fields) {
     const c = getClient(cid); if (!c) return;
     const s = (c.schede||[]).find(s => s.id === sid); if (!s) return;
-    Object.assign(s, fields); save(); pushToFirebase('clienti', cid, c);
+    Object.assign(s, fields); save(); push("clienti", cid, c);
   }
 
   function deleteScheda(cid, sid) {
     const c = getClient(cid); if (!c) return;
     c.schede = (c.schede||[]).filter(s => s.id !== sid);
-    save(); pushToFirebase('clienti', cid, c);
+    save(); push("clienti", cid, c);
   }
 
-  // ── MISURE ────────────────────────────────────────────────────────────────────
   function getMisure(cid) { return getClient(cid)?.misure || []; }
 
   function addMisura(cid, fields) {
     const c = getClient(cid); if (!c) return;
     if (!Array.isArray(c.misure)) c.misure = [];
     c.misure.push({ id: uid(), data: today(), ...fields });
-    c.misure.sort((a,b) => (a.data||'').localeCompare(b.data||''));
-    save(); pushToFirebase('clienti', cid, c);
+    c.misure.sort((a,b) => (a.data||"").localeCompare(b.data||""));
+    save(); push("clienti", cid, c);
   }
 
   function deleteMisura(cid, mid) {
     const c = getClient(cid); if (!c) return;
     c.misure = (c.misure||[]).filter(m => m.id !== mid);
-    save(); pushToFirebase('clienti', cid, c);
+    save(); push("clienti", cid, c);
   }
 
-  // ── NUTRIZIONE ────────────────────────────────────────────────────────────────
   function getNutrizione(cid)    { return getClient(cid)?.nutrizione || null; }
   function setNutrizione(cid, n) {
     const c = getClient(cid); if (!c) return;
-    c.nutrizione = n; save(); pushToFirebase('clienti', cid, c);
+    c.nutrizione = n; save(); push("clienti", cid, c);
   }
 
-  // ── PAGAMENTI ─────────────────────────────────────────────────────────────────
   function getPagamentiCliente(cid) { return (get().pagamenti||[]).filter(p => p.clienteId === cid); }
   function getAllPagamenti()         { return get().pagamenti || []; }
 
   function addPagamento(fields) {
     const rec = { id: uid(), data: today(), ...fields };
     get().pagamenti.push(rec);
-    save(); pushToFirebase('pagamenti', rec.id, rec); return rec;
+    save(); push("pagamenti", rec.id, rec); return rec;
   }
 
   function deletePagamento(id) {
     get().pagamenti = get().pagamenti.filter(p => p.id !== id);
-    save(); deleteFromFirebase('pagamenti', id);
+    save(); remove("pagamenti", id);
   }
 
-  // ── HELPERS ───────────────────────────────────────────────────────────────────
   function today() { return new Date().toISOString().slice(0,10); }
-  function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function fmt(d)  { if (!d) return '—'; try { const [y,m,g]=d.split('-'); return g+'/'+m+'/'+y; } catch(e){return d;} }
-  function fmtEur(n){ return '€ '+(parseFloat(n)||0).toFixed(2); }
+  function esc(s)  { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function fmt(d)  { if (!d) return "—"; try { const [y,m,g]=d.split("-"); return g+"/"+m+"/"+y; } catch(e){return d;} }
+  function fmtEur(n){ return "€ "+(parseFloat(n)||0).toFixed(2); }
   function age(dob){
-    if (!dob) return '—';
+    if (!dob) return "—";
     try {
       const d=new Date(dob),now=new Date();
-      if (isNaN(d.getTime())) return '—';
+      if (isNaN(d.getTime())) return "—";
       let a=now.getFullYear()-d.getFullYear();
       if (now<new Date(now.getFullYear(),d.getMonth(),d.getDate())) a--;
       return a;
-    } catch(e){return '—';}
+    } catch(e){return "—";}
   }
 
   loadLocal();
-  // Init Firebase async — app works immediately with local data
-  setTimeout(() => initFirebase(), 100);
+  window.addEventListener("load", () => setTimeout(initFirebase, 300));
 
   return {
     getClients, getClient, addClient, updateClient, deleteClient,
