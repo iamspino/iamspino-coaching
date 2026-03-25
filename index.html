@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="IamSpino">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#0f0f0f">
+<title>IamSpino Coaching</title>
+<link rel="apple-touch-icon" href="icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,600&display=swap" rel="stylesheet">
+<style>
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;--surface:#161616;--surface2:#1e1e1e;--surface3:#252525;
+  --border:#2a2a2a;--border2:#333;
+  --accent:#f5c518;--accent2:#e05c2a;--accent3:#4caf50;--accentBlue:#4a9eff;
+  --text:#efefef;--muted:#666;--muted2:#888;
+  --radius:7px;--radiusLg:12px;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;height:100vh;overflow:hidden;display:flex}
+
+/* NAV */
+nav{width:224px;min-width:224px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.nav-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.nav-logo-inner{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.nav-logo h1{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;color:var(--accent);line-height:1.1}
+.nav-logo .sub{font-family:'Bebas Neue',cursive;font-size:10px;letter-spacing:3px;color:var(--accent);opacity:.6}
+.nav-logo small{display:block;color:var(--muted);font-size:10px;letter-spacing:1px;font-family:'DM Sans',sans-serif}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent3);margin-left:5px;vertical-align:middle;transition:background .3s}
+.dot.dirty{background:var(--accent2)}
+.nav-section{padding:12px 16px 5px;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-left:3px solid transparent;color:var(--muted);font-weight:500;transition:all .15s;font-size:13px}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{border-left-color:var(--accent);background:var(--surface2);color:var(--accent)}
+.nav-item .ico{font-size:15px;min-width:18px;text-align:center}
+.nav-bottom{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+
+/* MAIN */
+#app{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;gap:14px;padding:10px 28px;background:var(--surface);border-bottom:1px solid var(--border);min-height:52px}
+.topbar h2{font-family:'Bebas Neue',cursive;font-size:19px;letter-spacing:2px;color:var(--text);flex:1}
+#page{flex:1;overflow-y:auto;padding:24px 28px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:var(--radius);border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .15s;white-space:nowrap}
+.btn-accent{background:var(--accent);color:#000;font-weight:700}.btn-accent:hover{background:#ffd740}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2)}.btn-ghost:hover{color:var(--text);border-color:#555}
+.btn-danger{background:transparent;color:var(--accent2);border:1px solid var(--accent2)}.btn-danger:hover{background:var(--accent2);color:#fff}
+.btn-green{background:var(--accent3);color:#000;font-weight:700}.btn-green:hover{filter:brightness(1.1)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-w{width:100%}
+
+/* INPUTS */
+input,textarea,select{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px;outline:none;transition:border .15s;width:100%}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:60px}
+.field{display:flex;flex-direction:column;gap:4px;flex:1}
+.field label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.row{display:flex;gap:12px;margin-bottom:14px;align-items:flex-end}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radiusLg);padding:18px 20px;margin-bottom:18px}
+.card-title{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radiusLg);padding:16px 18px}
+.stat-box .val{font-family:'Bebas Neue',cursive;font-size:30px;color:var(--accent);line-height:1;margin-bottom:3px}
+.stat-box .lbl{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.stat-box .sub{font-size:11px;color:var(--muted2);margin-top:3px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+table.tbl th{background:#111;color:var(--muted);text-align:left;padding:9px 12px;font-size:10px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+table.tbl td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+table.tbl tr:hover td{background:var(--surface2)}
+table.tbl .actions{display:flex;gap:6px;justify-content:flex-end}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;letter-spacing:.5px}
+.badge-green{background:rgba(76,175,80,.15);color:var(--accent3);border:1px solid rgba(76,175,80,.3)}
+.badge-red{background:rgba(224,92,42,.15);color:var(--accent2);border:1px solid rgba(224,92,42,.3)}
+.badge-yellow{background:rgba(245,197,24,.15);color:var(--accent);border:1px solid rgba(245,197,24,.3)}
+.badge-blue{background:rgba(74,158,255,.15);color:var(--accentBlue);border:1px solid rgba(74,158,255,.3)}
+
+/* AVATAR */
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--surface3);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:15px;color:var(--accent);flex-shrink:0}
+
+/* DIVIDER */
+.divider{display:flex;align-items:center;gap:10px;margin:20px 0 12px}
+.divider span{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:500}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radiusLg);padding:26px;width:540px;max-width:96vw;max-height:88vh;overflow-y:auto}
+.modal-lg{width:720px}
+.modal h3{font-family:'Bebas Neue',cursive;font-size:21px;color:var(--accent);letter-spacing:1px;margin-bottom:14px}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;z-index:600;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{border-color:var(--accent3);color:var(--accent3)}
+.toast.warn{border-color:var(--accent2);color:var(--accent2)}
+
+/* EXERCISE */
+.ex-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.ex-head{display:flex;align-items:center;gap:10px;background:#111;padding:9px 14px;cursor:pointer;user-select:none}
+.ex-num{font-family:'Bebas Neue',cursive;font-size:18px;color:var(--accent);min-width:20px}
+.ex-name{flex:1;font-weight:500;font-size:13px}
+.ex-name.empty{color:var(--muted);font-style:italic;font-weight:400}
+.tipo-pill{font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--muted)}
+.chevron{color:var(--muted);font-size:11px;transition:transform .2s}
+.chevron.open{transform:rotate(180deg)}
+.ex-body{padding:14px;display:flex;flex-direction:column;gap:12px}
+
+/* GRID SETTIMANE */
+.grid-wrap{overflow-x:auto}
+table.wgrid{border-collapse:collapse;width:100%;min-width:620px;font-size:11px}
+table.wgrid th{background:#0d0d0d;color:var(--muted);text-align:center;padding:5px 3px;font-size:9px;letter-spacing:.5px;border:1px solid var(--border);white-space:nowrap}
+table.wgrid th.ac{color:var(--accent)}
+table.wgrid td{border:1px solid var(--border);padding:2px}
+table.wgrid td input{background:transparent;border:none;text-align:center;padding:4px 2px;font-size:11px;color:var(--text);min-width:60px;width:100%;outline:none}
+table.wgrid td input:focus{background:rgba(245,197,24,.06);border-radius:3px}
+table.wgrid tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+table.wgrid .kgl{color:var(--muted);font-size:10px;text-align:left;padding:4px 6px;background:#0d0d0d;white-space:nowrap}
+
+/* MACRO */
+.macro-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.macro-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+.macro-box .mv{font-family:'Bebas Neue',cursive;font-size:24px;line-height:1}
+.macro-box .ml{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:3px}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty .ico{font-size:40px;margin-bottom:12px}
+
+/* CLIENT SELECTOR */
+.client-selector{display:flex;align-items:center;gap:8px}
+.client-selector select{background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius);padding:6px 10px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;min-width:200px;cursor:pointer}
+.client-selector select:focus{border-color:var(--accent)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+@media (max-width:900px){
+  nav{width:200px;min-width:200px}
+  #page{padding:16px 18px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .row3{grid-template-columns:1fr 1fr}
+  .row4{grid-template-columns:1fr 1fr}
+  .macro-grid{grid-template-columns:repeat(2,1fr)}
+  .topbar{flex-wrap:wrap;gap:8px;padding:10px 16px}
+  .modal,.modal-lg{width:95vw}
+}
+@media (max-width:680px){
+  body{overflow:auto;height:auto}
+  .app{flex-direction:column;height:auto;min-height:100vh}
+  nav{width:100%;min-width:100%;height:auto;overflow:visible;flex-direction:row;flex-wrap:wrap}
+  .nav-logo{padding:10px 14px;border-bottom:none;border-right:1px solid var(--border)}
+  .nav-logo small{display:none}
+  .nav-section{display:none}
+  .nav-item{padding:8px 10px;border-left:none;border-bottom:3px solid transparent;flex-direction:column;gap:2px;font-size:10px}
+  .nav-item .icon{font-size:18px}
+  .nav-item.active{border-left-color:transparent;border-bottom-color:var(--accent)}
+  .nav-bottom{display:none}
+  #app{overflow:visible}
+  #page{overflow:visible;padding:14px}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .row3{grid-template-columns:1fr}
+  .row4{grid-template-columns:1fr 1fr}
+  .modal{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-inner">
+      <svg width="38" height="38" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="50,7 84,26 84,74 50,93 16,74 16,26" fill="#111" stroke="#f5c518" stroke-width="3.5"/>
+        <rect x="23" y="46" width="54" height="8" rx="3" fill="#f5c518"/>
+        <rect x="15" y="34" width="9" height="32" rx="2.5" fill="#f5c518"/>
+        <rect x="76" y="34" width="9" height="32" rx="2.5" fill="#f5c518"/>
+        <rect x="24" y="39" width="6" height="22" rx="2" fill="#f5c518"/>
+        <rect x="70" y="39" width="6" height="22" rx="2" fill="#f5c518"/>
+        <rect x="30" y="43" width="4" height="14" rx="1.5" fill="#d4a500"/>
+        <rect x="66" y="43" width="4" height="14" rx="1.5" fill="#d4a500"/>
+        <rect x="43" y="46" width="3" height="8" rx="1" fill="#b8900a" opacity=".8"/>
+        <rect x="50" y="46" width="3" height="8" rx="1" fill="#b8900a" opacity=".8"/>
+        <rect x="57" y="46" width="3" height="8" rx="1" fill="#b8900a" opacity=".8"/>
+      </svg>
+      <div>
+        <h1>IAMSPINO</h1>
+        <div class="sub">COACHING</div>
+      </div>
+    </div>
+    <small>Gestionale PT <span class="dot" id="dot"></span></small>
+  </div>
+  <div class="nav-section">Overview</div>
+  <div class="nav-item active" data-page="dashboard" onclick="go('dashboard',this)"><span class="ico">🏠</span>Dashboard</div>
+  <div class="nav-section">Clienti</div>
+  <div class="nav-item" data-page="clienti" onclick="go('clienti',this)"><span class="ico">👤</span>Anagrafica</div>
+  <div class="nav-section">Allenamento</div>
+  <div class="nav-item" data-page="schede" onclick="go('schede',this)"><span class="ico">📋</span>Schede</div>
+  <div class="nav-item" data-page="progressi" onclick="go('progressi',this)"><span class="ico">📊</span>Progressi & Misure</div>
+  <div class="nav-section">Gestione</div>
+  <div class="nav-item" data-page="nutrizione" onclick="go('nutrizione',this)"><span class="ico">🍽</span>Nutrizione</div>
+  <div class="nav-item" data-page="pagamenti" onclick="go('pagamenti',this)"><span class="ico">💰</span>Pagamenti</div>
+  <div class="nav-bottom">
+    <button class="btn btn-ghost btn-w btn-sm" onclick="exportClientJSON()">⬇ Esporta cliente</button>
+  </div>
+</nav>
+
+<div id="app">
+  <div class="topbar">
+    <h2 id="pageTitle">DASHBOARD</h2>
+    <div class="client-selector">
+      <span style="color:var(--muted);font-size:12px">Cliente:</span>
+      <select id="clientSelect" onchange="onClientChange()">
+        <option value="">— Seleziona cliente —</option>
+      </select>
+    </div>
+    <button class="btn btn-accent btn-sm" onclick="openNewClientModal()">+ Nuovo Cliente</button>
+  </div>
+  <div id="page"></div>
+</div>
+
+<div class="overlay" id="overlay" style="display:none" onclick="closeModal()">
+  <div class="modal" id="modalBox" onclick="event.stopPropagation()">
+    <h3 id="mTitle"></h3>
+    <div id="mContent"></div>
+    <div class="modal-btns" id="mBtns"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+
+<script>
+// ── DB.JS ─────────────────────────────────────────────────────────────────────
+const DB = (() => {
+  const KEY = 'iamspino_v1';
+  let _d = null;
+
+  function defaults() {
+    return { clienti: [], pagamenti: [] };
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      _d = raw ? JSON.parse(raw) : defaults();
+    } catch(e) { _d = defaults(); }
+    if (!Array.isArray(_d.clienti))   _d.clienti   = [];
+    if (!Array.isArray(_d.pagamenti)) _d.pagamenti = [];
+    return _d;
+  }
+
+  // Always save synchronously and immediately
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(_d)); } catch(e) {}
+    const dot = document.getElementById('dot');
+    if (dot) dot.classList.remove('dirty');
+  }
+
+  let _t = null;
+  function dirtySave() {
+    const dot = document.getElementById('dot');
+    if (dot) dot.classList.add('dirty');
+    clearTimeout(_t);
+    _t = setTimeout(save, 500);
+  }
+
+  function data() { return _d || load(); }
+
+  // ── HELPERS ──────────────────────────────────────────────────────────────────
+  function uid()    { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+  function today()  { return new Date().toISOString().slice(0,10); }
+  function esc(s)   { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmt(d)   { if (!d) return '—'; try { const [y,m,g]=d.split('-'); return `${g}/${m}/${y}`; } catch{return d;} }
+  function fmtEur(n){ return '€ ' + (parseFloat(n)||0).toFixed(2); }
+  function age(dob) {
+    if (!dob) return '—';
+    try {
+      const b = new Date(dob), now = new Date();
+      let a = now.getFullYear() - b.getFullYear();
+      if (now < new Date(now.getFullYear(), b.getMonth(), b.getDate())) a--;
+      return isNaN(a) ? '—' : a;
+    } catch { return '—'; }
+  }
+
+  // ── CLIENTI ──────────────────────────────────────────────────────────────────
+  function getClients()  { return data().clienti; }
+  function getClient(id) { return data().clienti.find(c => c.id === id) || null; }
+
+  function addClient(fields) {
+    const c = { id: uid(), createdAt: Date.now(), schede: [], misure: [], ...fields };
+    data().clienti.push(c);
+    save(); // immediate — no debounce
+    return c;
+  }
+
+  function updateClient(id, fields) {
+    const c = getClient(id);
+    if (!c) return;
+    Object.assign(c, fields);
+    save(); // immediate
+  }
+
+  function deleteClient(id) {
+    data().clienti   = data().clienti.filter(c => c.id !== id);
+    data().pagamenti = data().pagamenti.filter(p => p.clienteId !== id);
+    save();
+  }
+
+  // ── SCHEDE ───────────────────────────────────────────────────────────────────
+  function getSchede(cid) { return getClient(cid)?.schede || []; }
+
+  function addScheda(cid, fields) {
+    const c = getClient(cid); if (!c) return;
+    if (!c.schede) c.schede = [];
+    c.schede.push({ id: uid(), createdAt: Date.now(), esercizi: [], ...fields });
+    save();
+  }
+
+  function updateScheda(cid, sid, fields) {
+    const c = getClient(cid); if (!c) return;
+    const s = (c.schede||[]).find(s => s.id === sid); if (!s) return;
+    Object.assign(s, fields); save();
+  }
+
+  function deleteScheda(cid, sid) {
+    const c = getClient(cid); if (!c) return;
+    c.schede = (c.schede||[]).filter(s => s.id !== sid); save();
+  }
+
+  // ── ESERCIZI (direct mutation, caller calls save) ─────────────────────────
+  function getScheda(cid, sid) {
+    return (getClient(cid)?.schede||[]).find(s => s.id === sid) || null;
+  }
+
+  // ── MISURE ────────────────────────────────────────────────────────────────
+  function getMisure(cid) { return getClient(cid)?.misure || []; }
+
+  function addMisura(cid, fields) {
+    const c = getClient(cid); if (!c) return;
+    if (!c.misure) c.misure = [];
+    c.misure.push({ id: uid(), data: today(), ...fields });
+    c.misure.sort((a,b) => (a.data||'').localeCompare(b.data||''));
+    save();
+  }
+
+  function deleteMisura(cid, mid) {
+    const c = getClient(cid); if (!c) return;
+    c.misure = (c.misure||[]).filter(m => m.id !== mid); save();
+  }
+
+  // ── NUTRIZIONE ───────────────────────────────────────────────────────────
+  function getNutrizione(cid)    { return getClient(cid)?.nutrizione || null; }
+  function setNutrizione(cid, n) { const c = getClient(cid); if (!c) return; c.nutrizione = n; save(); }
+
+  // ── PAGAMENTI ────────────────────────────────────────────────────────────
+  function getPagamentiCliente(cid) { return (data().pagamenti||[]).filter(p => p.clienteId === cid); }
+  function getAllPagamenti()         { return data().pagamenti || []; }
+
+  function addPagamento(fields) {
+    if (!data().pagamenti) data().pagamenti = [];
+    const p = { id: uid(), data: today(), ...fields };
+    data().pagamenti.push(p); save(); return p;
+  }
+
+  function deletePagamento(id) {
+    data().pagamenti = (data().pagamenti||[]).filter(p => p.id !== id); save();
+  }
+
+  load();
+
+  return {
+    save, dirtySave, uid, today, esc, fmt, fmtEur, age,
+    getClients, getClient, addClient, updateClient, deleteClient,
+    getSchede, getScheda, addScheda, updateScheda, deleteScheda,
+    getMisure, addMisura, deleteMisura,
+    getNutrizione, setNutrizione,
+    getPagamentiCliente, getAllPagamenti, addPagamento, deletePagamento,
+  };
+})();
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const clients  = DB.getClients();
+  const pagamenti = DB.getAllPagamenti();
+  const now      = new Date();
+  const thisMonth = now.toISOString().slice(0,7);
+  const attivi   = clients.filter(c => c.stato === 'attivo').length;
+  const incasso  = pagamenti
+    .filter(p => (p.data||'').startsWith(thisMonth))
+    .reduce((s,p) => s + (parseFloat(p.importo)||0), 0);
+
+  const scadenze = clients.filter(c => {
+    if (!c.scadenzaAbb) return false;
+    try {
+      const diff = (new Date(c.scadenzaAbb) - now) / 86400000;
+      return !isNaN(diff) && diff >= 0 && diff <= 14;
+    } catch { return false; }
+  });
+
+  const recent = [...clients]
+    .sort((a,b) => (b.createdAt||0) - (a.createdAt||0))
+    .slice(0,6);
+
+  return `
+  <div class="stats-grid">
+    <div class="stat-box"><div class="val">${clients.length}</div><div class="lbl">Clienti Totali</div><div class="sub">${attivi} attivi</div></div>
+    <div class="stat-box"><div class="val">${attivi}</div><div class="lbl">Clienti Attivi</div><div class="sub">${clients.length-attivi} inattivi</div></div>
+    <div class="stat-box"><div class="val">${DB.fmtEur(incasso)}</div><div class="lbl">Incasso Mese</div><div class="sub">${thisMonth.replace('-','/')}</div></div>
+    <div class="stat-box"><div class="val" style="color:${scadenze.length?'var(--accent2)':'var(--accent3)'}">${scadenze.length}</div><div class="lbl">Scadenze Vicine</div><div class="sub">entro 14 giorni</div></div>
+  </div>
+
+  ${scadenze.length ? `
+  <div class="card">
+    <div class="card-title"><span>⚠️ Abbonamenti in Scadenza</span></div>
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Cliente</th><th>Scadenza</th><th>Giorni</th><th></th></tr></thead>
+      <tbody>${scadenze.map(c => {
+        const diff = Math.ceil((new Date(c.scadenzaAbb)-now)/86400000);
+        return `<tr>
+          <td><div style="display:flex;align-items:center;gap:9px">
+            <div class="avatar">${(c.nome||'?')[0].toUpperCase()}</div>
+            ${DB.esc(c.nome)} ${DB.esc(c.cognome||'')}
+          </div></td>
+          <td>${DB.fmt(c.scadenzaAbb)}</td>
+          <td><span class="badge ${diff<=7?'badge-red':'badge-yellow'}">${diff}gg</span></td>
+          <td><div class="actions"><button class="btn btn-ghost btn-sm" onclick="goAndSelect('clienti','${c.id}')">Apri</button></div></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>` : ''}
+
+  <div class="card">
+    <div class="card-title"><span>👤 Clienti Recenti</span>
+      <button class="btn btn-ghost btn-sm" onclick="go('clienti')">Vedi tutti →</button>
+    </div>
+    ${recent.length === 0
+      ? `<div class="empty"><div class="ico">👥</div><p>Nessun cliente ancora.<br>Clicca <strong>"+ Nuovo Cliente"</strong> per iniziare!</p></div>`
+      : `<div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Cliente</th><th>Stato</th><th>Obiettivo</th><th>Abbonamento</th><th>Scadenza</th><th></th></tr></thead>
+        <tbody>${recent.map(c => `<tr>
+          <td><div style="display:flex;align-items:center;gap:9px">
+            <div class="avatar">${(c.nome||'?')[0].toUpperCase()}</div>
+            <div><div style="font-weight:500">${DB.esc(c.nome)} ${DB.esc(c.cognome||'')}</div>
+            <div style="font-size:11px;color:var(--muted)">${DB.esc(c.email||'')}</div></div>
+          </div></td>
+          <td><span class="badge ${c.stato==='attivo'?'badge-green':'badge-red'}">${c.stato||'—'}</span></td>
+          <td style="color:var(--muted2)">${DB.esc(c.obiettivo||'—')}</td>
+          <td style="color:var(--muted2)">${DB.esc(c.tipoAbb||'—')}</td>
+          <td style="color:var(--muted2)">${DB.fmt(c.scadenzaAbb)}</td>
+          <td><div class="actions"><button class="btn btn-ghost btn-sm" onclick="goAndSelect('clienti','${c.id}')">Apri</button></div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`}
+  </div>`;
+}
+
+// ── CLIENTI ───────────────────────────────────────────────────────────────────
+function renderClienti() {
+  const all = DB.getClients();
+  const q   = (document.getElementById('srcClienti')?.value||'').toLowerCase();
+  const list = q ? all.filter(c =>
+    `${c.nome} ${c.cognome||''} ${c.email||''} ${c.telefono||''}`.toLowerCase().includes(q)
+  ) : all;
+
+  return `
+  <div class="row" style="margin-bottom:14px">
+    <div class="field">
+      <input id="srcClienti" placeholder="🔍 Cerca per nome, email, telefono…"
+        oninput="renderPage()" style="max-width:360px">
+    </div>
+    <button class="btn btn-accent" onclick="openNewClientModal()">+ Nuovo Cliente</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    ${list.length === 0
+      ? `<div class="empty"><div class="ico">👥</div><p>${q?'Nessun risultato.':'Nessun cliente ancora.'}</p></div>`
+      : `<div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Cliente</th><th>Età</th><th>Telefono</th><th>Obiettivo</th><th>Abbonamento</th><th>Scadenza</th><th>Stato</th><th></th></tr></thead>
+        <tbody>${list.map(c => {
+          const now  = new Date();
+          const scad = c.scadenzaAbb ? (() => { try { const d=(new Date(c.scadenzaAbb)-now)/86400000; return isNaN(d)?null:Math.ceil(d); } catch{return null;} })() : null;
+          const scadBadge = scad===null ? '—'
+            : scad < 0   ? `<span class="badge badge-red">Scaduto</span>`
+            : scad <= 7  ? `<span class="badge badge-red">${scad}gg</span>`
+            : scad <= 14 ? `<span class="badge badge-yellow">${scad}gg</span>`
+            : `<span style="color:var(--muted2)">${DB.fmt(c.scadenzaAbb)}</span>`;
+          return `<tr style="cursor:pointer" onclick="openClientDetail('${c.id}')">
+            <td><div style="display:flex;align-items:center;gap:9px">
+              <div class="avatar">${(c.nome||'?')[0].toUpperCase()}</div>
+              <div><div style="font-weight:500">${DB.esc(c.nome)} ${DB.esc(c.cognome||'')}</div>
+              <div style="font-size:11px;color:var(--muted)">${DB.esc(c.email||'')}</div></div>
+            </div></td>
+            <td style="color:var(--muted2)">${c.dataNascita ? DB.age(c.dataNascita) : '—'}</td>
+            <td style="color:var(--muted2)">${DB.esc(c.telefono||'—')}</td>
+            <td style="color:var(--muted2)">${DB.esc(c.obiettivo||'—')}</td>
+            <td style="color:var(--muted2)">${DB.esc(c.tipoAbb||'—')}</td>
+            <td>${scadBadge}</td>
+            <td><span class="badge ${c.stato==='attivo'?'badge-green':'badge-red'}">${c.stato||'—'}</span></td>
+            <td onclick="event.stopPropagation()"><div class="actions">
+              <button class="btn btn-ghost btn-sm" onclick="openEditClientModal('${c.id}')">✏️</button>
+              <button class="btn btn-danger btn-sm" onclick="confirmDeleteClient('${c.id}')">🗑</button>
+            </div></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`}
+  </div>`;
+}
+
+// ── DETAIL ────────────────────────────────────────────────────────────────────
+function openClientDetail(id) {
+  const c = DB.getClient(id); if (!c) return;
+  const misure  = DB.getMisure(id);
+  const lastM   = misure[misure.length-1];
+  const pags    = DB.getPagamentiCliente(id);
+  const totPag  = pags.reduce((s,p) => s+(parseFloat(p.importo)||0), 0);
+
+  modal('Profilo Cliente', `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:14px">
+    <div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div class="avatar" style="width:50px;height:50px;font-size:22px">${(c.nome||'?')[0].toUpperCase()}</div>
+        <div>
+          <div style="font-size:17px;font-weight:600">${DB.esc(c.nome)} ${DB.esc(c.cognome||'')}</div>
+          <div style="color:var(--muted);font-size:12px">${DB.esc(c.email||'')}${c.telefono?' · '+DB.esc(c.telefono):''}</div>
+          <span class="badge ${c.stato==='attivo'?'badge-green':'badge-red'}" style="margin-top:4px">${c.stato||'—'}</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+        ${ir('Data Nascita',DB.fmt(c.dataNascita))}
+        ${ir('Età', c.dataNascita ? DB.age(c.dataNascita)+' anni' : '—')}
+        ${ir('Sesso',c.sesso||'—')} ${ir('Livello',c.livello||'—')}
+        ${ir('Obiettivo',c.obiettivo||'—')} ${ir('Tipo Abb.',c.tipoAbb||'—')}
+        ${ir('Inizio',DB.fmt(c.inizioAbb))} ${ir('Scadenza',DB.fmt(c.scadenzaAbb))}
+      </div>
+    </div>
+    <div>
+      <div style="font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Ultime Misure</div>
+      ${lastM ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px">
+        ${ir('Data',DB.fmt(lastM.data))} ${ir('Peso',(lastM.peso||'—')+' kg')}
+        ${ir('% Grasso',(lastM.grassoPerc||'—')+'%')} ${ir('BMI',lastM.bmi||'—')}
+        ${ir('Vita',(lastM.vita||'—')+' cm')} ${ir('Fianchi',(lastM.fianchi||'—')+' cm')}
+      </div>` : '<p style="color:var(--muted);font-size:12px">Nessuna misura registrata</p>'}
+      <div style="margin-top:12px;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Pagamenti</div>
+      <div style="font-size:13px">${DB.fmtEur(totPag)} totale · ${pags.length} pagamenti</div>
+    </div>
+  </div>
+  ${c.anamnesi ? `<div style="font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Anamnesi / Note</div>
+  <div style="background:var(--surface2);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--muted2);white-space:pre-wrap">${DB.esc(c.anamnesi)}</div>` : ''}
+  `, [
+    { label:'✏️ Modifica', cls:'btn-ghost', fn:()=>{ closeModal(); openEditClientModal(id); } },
+    { label:'Chiudi', cls:'btn-ghost', fn:closeModal }
+  ], true);
+}
+
+function ir(label, val) {
+  return `<div><div style="font-size:10px;color:var(--muted)">${label}</div><div style="font-weight:500">${val||'—'}</div></div>`;
+}
+
+// ── FORM ──────────────────────────────────────────────────────────────────────
+function openNewClientModal()     { clientForm(null); }
+function openEditClientModal(id)  { clientForm(id); }
+
+function clientForm(id) {
+  const c = (id ? DB.getClient(id) : null) || {};
+  modal(id ? 'Modifica Cliente' : 'Nuovo Cliente', `
+  <div class="row3">
+    <div class="field"><label>Nome *</label><input id="cf-nome" value="${DB.esc(c.nome||'')}"></div>
+    <div class="field"><label>Cognome</label><input id="cf-cognome" value="${DB.esc(c.cognome||'')}"></div>
+    <div class="field"><label>Sesso</label><select id="cf-sesso">
+      <option value="">—</option>
+      <option ${c.sesso==='M'?'selected':''} value="M">M</option>
+      <option ${c.sesso==='F'?'selected':''} value="F">F</option>
+    </select></div>
+  </div>
+  <div class="row3">
+    <div class="field"><label>Data Nascita</label><input type="date" id="cf-dob" value="${c.dataNascita||''}"></div>
+    <div class="field"><label>Telefono</label><input id="cf-tel" value="${DB.esc(c.telefono||'')}"></div>
+    <div class="field"><label>Email</label><input id="cf-email" value="${DB.esc(c.email||'')}"></div>
+  </div>
+  <div class="row3">
+    <div class="field"><label>Obiettivo</label><select id="cf-obiettivo">
+      ${['—','Dimagrimento','Massa muscolare','Tonificazione','Performance','Riabilitazione','Mantenimento','Altro'].map(o=>`<option ${c.obiettivo===o?'selected':''}>${o}</option>`).join('')}
+    </select></div>
+    <div class="field"><label>Livello</label><select id="cf-livello">
+      ${['—','Principiante','Intermedio','Avanzato','Agonista'].map(o=>`<option ${c.livello===o?'selected':''}>${o}</option>`).join('')}
+    </select></div>
+    <div class="field"><label>Stato</label><select id="cf-stato">
+      <option value="attivo" ${c.stato==='attivo'||!c.stato?'selected':''}>Attivo</option>
+      <option value="inattivo" ${c.stato==='inattivo'?'selected':''}>Inattivo</option>
+      <option value="sospeso" ${c.stato==='sospeso'?'selected':''}>Sospeso</option>
+    </select></div>
+  </div>
+  <div class="row3">
+    <div class="field"><label>Tipo Abbonamento</label><select id="cf-tipoabb">
+      ${['—','Mensile','Trimestrale','Semestrale','Annuale','A sessione','Online'].map(o=>`<option ${c.tipoAbb===o?'selected':''}>${o}</option>`).join('')}
+    </select></div>
+    <div class="field"><label>Inizio Abb.</label><input type="date" id="cf-inizio" value="${c.inizioAbb||''}"></div>
+    <div class="field"><label>Scadenza Abb.</label><input type="date" id="cf-scadenza" value="${c.scadenzaAbb||''}"></div>
+  </div>
+  <div class="row">
+    <div class="field" style="max-width:120px"><label>Altezza (cm)</label><input type="number" id="cf-altezza" value="${c.altezza||''}"></div>
+  </div>
+  <div class="field"><label>Anamnesi / Note Mediche</label>
+    <textarea id="cf-anamnesi" rows="3">${DB.esc(c.anamnesi||'')}</textarea>
+  </div>`, [
+    { label:'Annulla', cls:'btn-ghost', fn:closeModal },
+    { label: id ? 'Salva Modifiche' : 'Crea Cliente', cls:'btn-accent', fn:()=>saveClientForm(id) }
+  ], true);
+}
+
+function saveClientForm(id) {
+  const nome = v('cf-nome');
+  if (!nome) { toast('Il nome è obbligatorio', 'warn'); return; }
+  const fields = {
+    nome, cognome:v('cf-cognome'), sesso:v('cf-sesso'),
+    dataNascita:v('cf-dob'), telefono:v('cf-tel'), email:v('cf-email'),
+    obiettivo:v('cf-obiettivo'), livello:v('cf-livello'), stato:v('cf-stato')||'attivo',
+    tipoAbb:v('cf-tipoabb'), inizioAbb:v('cf-inizio'), scadenzaAbb:v('cf-scadenza'),
+    altezza:v('cf-altezza'), anamnesi:v('cf-anamnesi'),
+  };
+  if (id) {
+    DB.updateClient(id, fields);
+    closeModal();
+    refreshClientSelector();
+    renderPage();
+    toast('Cliente aggiornato ✓', 'ok');
+  } else {
+    const nc = DB.addClient(fields); // saves immediately
+    closeModal();
+    refreshClientSelector(nc.id);   // pass new id to keep it selected
+    renderPage();
+    toast('Cliente creato ✓', 'ok');
+  }
+}
+
+function confirmDeleteClient(id) {
+  const c = DB.getClient(id); if (!c) return;
+  modal('Elimina Cliente', `Eliminare ${DB.esc(c.nome)} ${DB.esc(c.cognome||'')}? Tutti i dati verranno persi.`, [
+    { label:'Annulla', cls:'btn-ghost', fn:closeModal },
+    { label:'Elimina', cls:'btn-danger', fn:()=>{
+      DB.deleteClient(id);
+      if (currentClientId === id) { currentClientId = null; }
+      closeModal(); refreshClientSelector(); renderPage();
+      toast('Cliente eliminato', 'warn');
+    }}
+  ]);
+}
+
+// ── SCHEDE ────────────────────────────────────────────────────────────────────
+const WEEKS   = ['SETT.1','SETT.2','SETT.3','SETT.4','SETT.5','SETT.6','SETT.7'];
+const TIPI_EX = ['Singolo','Stripping','Superset','Dropset','Biset','Triset','Circuit','AMRAP','EMOM','Piramidale'];
+let _openEx   = {};
+
+function renderSchede() {
+  if (!currentClientId) return noClient();
+  const c = DB.getClient(currentClientId);
+  if (!c) return noClient();
+  const schede = c.schede || [];
+  return `
+  <div style="display:flex;gap:10px;margin-bottom:18px">
+    <button class="btn btn-accent" onclick="openSchedaForm(null)">+ Nuova Scheda</button>
+  </div>
+  ${schede.length === 0
+    ? `<div class="empty"><div class="ico">📋</div><p>Nessuna scheda per questo cliente.</p></div>`
+    : schede.map((s,si) => schedaCard(s,si)).join('')}`;
+}
+
+function schedaCard(s, si) {
+  return `
+  <div class="card">
+    <div class="card-title">
+      <span style="display:flex;align-items:center;gap:12px">
+        <span style="font-family:'Bebas Neue',cursive;font-size:24px;color:var(--accent)">${DB.esc(s.label||'Scheda '+(si+1))}</span>
+        <span style="color:var(--muted2);font-size:12px">${(s.esercizi||[]).length} esercizi</span>
+        ${s.riscaldamento?`<span style="font-size:12px;color:var(--muted2)">⏱ ${DB.esc(s.riscaldamento)}</span>`:''}
+      </span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="openSchedaForm('${s.id}')">✏️ Info</button>
+        <button class="btn btn-ghost btn-sm" onclick="printScheda('${s.id}')">🖨 Stampa</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDeleteScheda('${s.id}')">🗑</button>
+      </div>
+    </div>
+    ${s.note?`<div style="font-size:12px;color:var(--muted2);margin-bottom:12px;border-left:2px solid var(--accent);padding-left:8px">${DB.esc(s.note)}</div>`:''}
+    ${(s.esercizi||[]).map((ex,ei) => exCard(s.id,ex,ei)).join('')}
+    <div style="margin-top:10px">
+      <button class="btn btn-ghost btn-sm" onclick="addEsercizio('${s.id}')">+ Aggiungi Esercizio</button>
+    </div>
+  </div>`;
+}
+
+function exCard(sid, ex, ei) {
+  const key  = sid + ex.id;
+  const open = !!_openEx[key];
+  return `
+  <div class="ex-card" id="excard-${key}">
+    <div class="ex-head" onclick="toggleEx('${key}')">
+      <span class="ex-num">${ei+1}</span>
+      <span class="ex-name ${!ex.nome?'empty':''}">${ex.nome?DB.esc(ex.nome):'Clicca per aprire…'}</span>
+      <span class="tipo-pill">${DB.esc(ex.tipo||'Singolo')}</span>
+      <span class="chevron ${open?'open':''}">▼</span>
+      <span onclick="event.stopPropagation();deleteEsercizio('${sid}','${ex.id}')"
+        style="color:var(--muted);cursor:pointer;padding:3px 7px;border-radius:4px;font-size:14px"
+        onmouseover="this.style.color='var(--accent2)'" onmouseout="this.style.color='var(--muted)'">🗑</span>
+    </div>
+    ${open ? exBody(sid, ex) : ''}
+  </div>`;
+}
+
+function exBody(sid, ex) {
+  const kgRows = ex.kgRows && ex.kgRows.length ? ex.kgRows : [Array(7).fill('')];
+  const sett   = ex.settimane && ex.settimane.length === 7 ? ex.settimane : Array(7).fill('');
+  return `
+  <div class="ex-body">
+    <div class="row">
+      <div class="field"><label>Nome Esercizio</label>
+        <input value="${DB.esc(ex.nome||'')}" placeholder="es. PREACHER CURL AI CAVI"
+          onchange="updateExField('${sid}','${ex.id}','nome',this.value)"></div>
+      <div class="field" style="max-width:170px"><label>Tipo</label>
+        <select onchange="updateExField('${sid}','${ex.id}','tipo',this.value)">
+          ${TIPI_EX.map(t=>`<option ${t===(ex.tipo||'Singolo')?'selected':''}>${t}</option>`).join('')}
+        </select></div>
+    </div>
+    <div class="field"><label>Note Esercizio</label>
+      <textarea rows="2" placeholder="Eccentrica controllata…"
+        onchange="updateExField('${sid}','${ex.id}','note',this.value)">${DB.esc(ex.note||'')}</textarea></div>
+    <div class="field"><label>Video (link)</label>
+      <input value="${DB.esc(ex.video||'')}" placeholder="https://youtube.com/…"
+        onchange="updateExField('${sid}','${ex.id}','video',this.value)"></div>
+    <div class="grid-wrap">
+      <table class="wgrid"><thead><tr>
+        ${WEEKS.map((w,i)=>`<th class="ac">${w}<br><span style="color:var(--muted);font-size:8px">SED.${i+1}</span></th>`).join('')}
+        <th>TUT<br>(SEC)</th><th>RIP.<br>(SEC)</th><th>PREP.<br>(MIN)</th>
+      </tr></thead><tbody>
+        <tr>
+          ${sett.map((val,i)=>`<td><input value="${DB.esc(val)}" placeholder="3×8"
+            onchange="updateExSett('${sid}','${ex.id}',${i},this.value)"></td>`).join('')}
+          <td><input value="${DB.esc(ex.tut||'')}" placeholder="90" style="min-width:44px"
+            onchange="updateExField('${sid}','${ex.id}','tut',this.value)"></td>
+          <td><input value="${DB.esc(ex.rip||'')}" placeholder="0" style="min-width:44px"
+            onchange="updateExField('${sid}','${ex.id}','rip',this.value)"></td>
+          <td><input value="${DB.esc(ex.prep||'')}" placeholder="0" style="min-width:44px"
+            onchange="updateExField('${sid}','${ex.id}','prep',this.value)"></td>
+        </tr>
+        ${kgRows.map((row,ri)=>`<tr>
+          <td class="kgl" style="padding-left:6px">kg ${ri+1}
+            ${kgRows.length>1?`<span onclick="removeKgRow('${sid}','${ex.id}',${ri})"
+              style="cursor:pointer;color:var(--accent2);margin-left:3px">−</span>`:''}
+          </td>
+          ${row.map((val,ci)=>`<td><input value="${DB.esc(val)}"
+            onchange="updateKgCell('${sid}','${ex.id}',${ri},${ci},this.value)"></td>`).join('')}
+          <td></td><td></td><td></td>
+        </tr>`).join('')}
+      </tbody></table>
+    </div>
+    <div><button class="btn btn-ghost btn-sm" onclick="addKgRow('${sid}','${ex.id}')">+ Riga kg</button></div>
+  </div>`;
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function toggleEx(key) { _openEx[key] = !_openEx[key]; renderPage(); }
+
+function newEx() {
+  return { id: DB.uid(), tipo:'Singolo', nome:'', note:'', video:'',
+           tut:'', rip:'', prep:'', settimane:Array(7).fill(''), kgRows:[Array(7).fill('')] };
+}
+
+function getMutScheda(sid) {
+  const c = DB.getClient(currentClientId); if (!c) return null;
+  return (c.schede||[]).find(s => s.id === sid) || null;
+}
+
+function addEsercizio(sid) {
+  const s = getMutScheda(sid); if (!s) return;
+  if (!s.esercizi) s.esercizi = [];
+  const ex = newEx();
+  s.esercizi.push(ex);
+  _openEx[sid+ex.id] = true;
+  DB.save(); renderPage();
+}
+
+function deleteEsercizio(sid, exId) {
+  const s = getMutScheda(sid); if (!s) return;
+  s.esercizi = (s.esercizi||[]).filter(e => e.id !== exId);
+  DB.save(); renderPage();
+}
+
+function updateExField(sid, exId, field, val) {
+  const s = getMutScheda(sid); if (!s) return;
+  const ex = (s.esercizi||[]).find(e => e.id === exId); if (!ex) return;
+  ex[field] = val;
+  if (field === 'nome' || field === 'tipo') { DB.save(); renderPage(); } else DB.save();
+}
+
+function updateExSett(sid, exId, idx, val) {
+  const s = getMutScheda(sid); if (!s) return;
+  const ex = (s.esercizi||[]).find(e => e.id === exId); if (!ex) return;
+  if (!ex.settimane || ex.settimane.length !== 7) ex.settimane = Array(7).fill('');
+  ex.settimane[idx] = val; DB.save();
+}
+
+function updateKgCell(sid, exId, ri, ci, val) {
+  const s = getMutScheda(sid); if (!s) return;
+  const ex = (s.esercizi||[]).find(e => e.id === exId); if (!ex) return;
+  if (!ex.kgRows || !ex.kgRows[ri]) return;
+  ex.kgRows[ri][ci] = val; DB.save();
+}
+
+function addKgRow(sid, exId) {
+  const s = getMutScheda(sid); if (!s) return;
+  const ex = (s.esercizi||[]).find(e => e.id === exId); if (!ex) return;
+  if (!ex.kgRows) ex.kgRows = [];
+  ex.kgRows.push(Array(7).fill(''));
+  DB.save(); renderPage();
+}
+
+function removeKgRow(sid, exId, ri) {
+  const s = getMutScheda(sid); if (!s) return;
+  const ex = (s.esercizi||[]).find(e => e.id === exId); if (!ex) return;
+  if (!ex.kgRows || ex.kgRows.length <= 1) return;
+  ex.kgRows.splice(ri, 1);
+  DB.save(); renderPage();
+}
+
+// ── SCHEDA FORM ───────────────────────────────────────────────────────────────
+function openSchedaForm(id) {
+  if (!currentClientId) { toast('Seleziona un cliente prima','warn'); return; }
+  const c = DB.getClient(currentClientId); if (!c) return;
+  const s = id ? (c.schede||[]).find(s=>s.id===id) : null;
+  modal(id?'Modifica Scheda':'Nuova Scheda', `
+  <div class="row">
+    <div class="field"><label>Etichetta (A, B, Forza…)</label>
+      <input id="sf-label" value="${DB.esc(s?.label||'')}" placeholder="A"></div>
+    <div class="field"><label>Riscaldamento</label>
+      <input id="sf-risc" value="${DB.esc(s?.riscaldamento||'')}" placeholder="15 MIN"></div>
+  </div>
+  <div class="field"><label>Note Scheda</label>
+    <textarea id="sf-note" rows="3">${DB.esc(s?.note||'')}</textarea></div>`, [
+    { label:'Annulla', cls:'btn-ghost', fn:closeModal },
+    { label:id?'Salva':'Crea Scheda', cls:'btn-accent', fn:()=>{
+      const fields = { label:v('sf-label')||'A', riscaldamento:v('sf-risc'), note:v('sf-note') };
+      if (id) { const sc=getMutScheda(id); if(sc) { Object.assign(sc,fields); DB.save(); } }
+      else    DB.addScheda(currentClientId, fields);
+      closeModal(); renderPage(); toast('Scheda salvata ✓','ok');
+    }}
+  ]);
+}
+
+function confirmDeleteScheda(id) {
+  modal('Elimina Scheda','Eliminare questa scheda e tutti i suoi esercizi?',[
+    { label:'Annulla', cls:'btn-ghost', fn:closeModal },
+    { label:'Elimina', cls:'btn-danger', fn:()=>{
+      DB.deleteScheda(currentClientId,id); closeModal(); renderPage(); toast('Scheda eliminata','warn');
+    }}
+  ]);
+}
+
+// ── PRINT ─────────────────────────────────────────────────────────────────────
+function printScheda(id) {
+  const c = DB.getClient(currentClientId); if (!c) return;
+  const schede = DB.getSchede(currentClientId);
+  const s = schede.find(s => s.id === id); if (!s) return;
+  const esercizi = Array.isArray(s.esercizi) ? s.esercizi : [];
+
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Scheda ${DB.esc(s.label)} - ${DB.esc(c.nome)}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;font-size:10.5pt;color:#111;background:#fff}
+  .page{width:210mm;margin:0 auto;padding:10mm 12mm 14mm}
+
+  /* ── HEADER ── */
+  .header{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:3px solid #f5c518;margin-bottom:10px}
+  .header-logo{display:flex;align-items:center;gap:10px}
+  .header-logo svg{width:44px;height:44px}
+  .header-brand{display:flex;flex-direction:column}
+  .header-brand .name{font-family:'Bebas Neue',cursive;font-size:20pt;letter-spacing:3px;color:#111;line-height:1}
+  .header-brand .sub{font-family:'Bebas Neue',cursive;font-size:9pt;letter-spacing:4px;color:#999;margin-top:1px}
+  .header-info{text-align:right;font-size:8.5pt;color:#555}
+  .header-info .atleta{font-size:12pt;font-weight:600;color:#111;margin-bottom:2px}
+
+  /* ── META ── */
+  .meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;margin-top:8px}
+  .meta-label{font-family:'Bebas Neue',cursive;font-size:22pt;color:#111}
+  .meta-risc{font-size:10.5pt;font-weight:600;color:#333}
+  .notebox{font-size:8.5pt;color:#333;margin-bottom:8px;padding:5px 8px;border-left:3px solid #f5c518;background:#fffdf0;white-space:pre-wrap}
+
+  /* ── ESERCIZI ── */
+  .ex{margin-bottom:8px;border:1px solid #ccc;border-radius:4px;overflow:hidden;break-inside:avoid}
+  .exh{background:#111;color:#fff;display:flex;align-items:center;gap:8px;padding:5px 10px}
+  .exn{font-family:'Bebas Neue',cursive;font-size:15pt;color:#f5c518;min-width:18px}
+  .ext{font-size:11pt;font-weight:600;flex:1}
+  .tipo{font-size:8pt;border:1px solid #555;padding:1px 6px;border-radius:10px;color:#aaa;letter-spacing:1px}
+  .exnote{font-size:8pt;color:#444;padding:4px 10px;background:#f8f8f8;white-space:pre-wrap}
+  .exvideo{font-size:7.5pt;color:#888;padding:2px 10px 4px;background:#f8f8f8}
+
+  /* ── TABELLA ── */
+  table{width:100%;border-collapse:collapse;font-size:8pt}
+  th{background:#1a1a1a;color:#ccc;text-align:center;padding:4px 3px;border:1px solid #888;font-size:7.5pt;white-space:nowrap}
+  td{border:1px solid #ccc;padding:3px;text-align:center}
+  tr:nth-child(even) td{background:#f5f5f5}
+  .kgr td{background:#efefef;color:#666;font-size:7.5pt}
+  .kgr td:first-child{text-align:left;padding-left:6px;font-style:italic;color:#888}
+
+  /* ── FOOTER ── */
+  .footer{margin-top:16px;padding-top:8px;border-top:1px solid #ddd;display:flex;justify-content:space-between;font-size:8pt;color:#aaa}
+
+  @page{margin:0}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style></head><body><div class="page">
+
+  <div class="header">
+    <div class="header-logo">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="50,7 84,26 84,74 50,93 16,74 16,26" fill="#111" stroke="#f5c518" stroke-width="3"/>
+        <rect x="22" y="46" width="56" height="8" rx="3" fill="#f5c518"/>
+        <rect x="16" y="34" width="9" height="32" rx="2" fill="#f5c518"/>
+        <rect x="75" y="34" width="9" height="32" rx="2" fill="#f5c518"/>
+        <rect x="25" y="39" width="6" height="22" rx="2" fill="#f5c518"/>
+        <rect x="69" y="39" width="6" height="22" rx="2" fill="#f5c518"/>
+        <rect x="31" y="43" width="4" height="14" rx="1" fill="#c89000"/>
+        <rect x="65" y="43" width="4" height="14" rx="1" fill="#c89000"/>
+      </svg>
+      <div class="header-brand">
+        <span class="name">IAMSPINO</span>
+        <span class="sub">COACHING</span>
+      </div>
+    </div>
+    <div class="header-info">
+      <div class="atleta">${DB.esc(c.nome)} ${DB.esc(c.cognome||'')}</div>
+      <div>Data: ${new Date().toLocaleDateString('it-IT')}</div>
+      ${c.email ? `<div>${DB.esc(c.email)}</div>` : ''}
+    </div>
+  </div>
+
+  <div class="meta">
+    <div class="meta-label">Scheda ${DB.esc(s.label||'')}</div>
+    <div class="meta-risc">⏱ Riscaldamento: ${DB.esc(s.riscaldamento||'—')}</div>
+  </div>
+  ${s.note ? `<div class="notebox">${DB.esc(s.note)}</div>` : ''}`;
+
+  esercizi.forEach((ex, i) => {
+    const sett   = Array.isArray(ex.settimane) ? ex.settimane : Array(7).fill('');
+    const kgRows = Array.isArray(ex.kgRows)    ? ex.kgRows    : [Array(7).fill('')];
+    html += `<div class="ex">
+    <div class="exh">
+      <span class="exn">${i+1}</span>
+      <span class="ext">${DB.esc(ex.nome||'(esercizio)')}</span>
+      <span class="tipo">${DB.esc(ex.tipo||'Singolo')}</span>
+    </div>
+    ${ex.note  ? `<div class="exnote">📝 ${DB.esc(ex.note)}</div>` : ''}
+    ${ex.video ? `<div class="exvideo">🎬 ${DB.esc(ex.video)}</div>` : ''}
+    <table><thead><tr>
+      ${WEEKS.map(w => `<th>${w}</th>`).join('')}
+      <th>TUT<br>(SEC)</th><th>RIP.<br>(SEC)</th><th>PREP.<br>(MIN)</th>
+    </tr></thead><tbody>
+    <tr>
+      ${sett.map(val => `<td>${DB.esc(val)}</td>`).join('')}
+      <td>${DB.esc(ex.tut||'')}</td><td>${DB.esc(ex.rip||'')}</td><td>${DB.esc(ex.prep||'')}</td>
+    </tr>
+    ${kgRows.map((row,ri) => `<tr class="kgr">
+      <td>kg ${ri+1}</td>
+      ${row.map(val => `<td>${DB.esc(val)}</td>`).join('')}
+      <td></td><td></td><td></td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+  });
+
+  html += `
+  <div class="footer">
+    <span>IamSpino Coaching — documento riservato all'uso personale del cliente</span>
+    <span>${DB.esc(c.nome)} ${DB.esc(c.cognome||'')} · Scheda ${DB.esc(s.label||'')}</span>
+  </div>
+  </div></body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 700);
+}
+
+// ── PROGRESSI ─────────────────────────────────────────────────────────────────
+function renderProgressi() {
+  if (!currentClientId) return noClient();
+  const c = DB.getClient(currentClientId); if (!c) return noClient();
+  const misure = DB.getMisure(currentClientId);
+  const last   = misure[misure.length-1] || null;
+  const first  = misure[0] || null;
+  function delta(field) {
+    if (!first || !last || first.id === last.id) return '';
+    const d = (parseFloat(last[field])||0) - (parseFloat(first[field])||0);
+    if (!d) return '';
+    const col = d < 0 ? 'var(--accent3)' : 'var(--accent2)';
+    return '<span style="font-size:12px;color:'+col+';margin-left:5px">'+(d>0?'+':'')+d.toFixed(1)+'</span>';
+  }
+  return `
+  <div style="display:flex;gap:10px;margin-bottom:18px">
+    <button class="btn btn-accent" onclick="openAddMisuraModal()">+ Nuova Misurazione</button>
+  </div>
+  ${last ? `<div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-box"><div class="val" style="font-size:22px">${last.peso||'—'} kg${delta('peso')}</div><div class="lbl">Peso</div></div>
+    <div class="stat-box"><div class="val" style="font-size:22px">${last.grassoPerc||'—'}%${delta('grassoPerc')}</div><div class="lbl">% Grasso</div></div>
+    <div class="stat-box"><div class="val" style="font-size:22px">${last.bmi||'—'}</div><div class="lbl">BMI</div></div>
+    <div class="stat-box"><div class="val" style="font-size:22px">${last.vita||'—'} cm${delta('vita')}</div><div class="lbl">Vita</div></div>
+  </div>` : ''}
+  ${misure.length >= 2 ? `
+  <div class="card"><div class="card-title"><span>Andamento Peso (kg)</span></div>${svgLine(misure,'peso','var(--accent)')}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card"><div class="card-title"><span>% Massa Grassa</span></div>${svgLine(misure,'grassoPerc','#4a9eff')}</div>
+    <div class="card"><div class="card-title"><span>Vita (cm)</span></div>${svgLine(misure,'vita','var(--accent2)')}</div>
+  </div>` : ''}
+  <div class="card">
+    <div class="card-title"><span>Storico Misurazioni</span></div>
+    ${misure.length === 0
+      ? `<div class="empty"><div class="ico">📏</div><p>Nessuna misurazione ancora.</p></div>`
+      : `<div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Data</th><th>Peso</th><th>% Grasso</th><th>BMI</th><th>Vita</th><th>Fianchi</th><th>Braccio</th><th>Coscia</th><th>Note</th><th></th></tr></thead>
+        <tbody>${[...misure].reverse().map(m=>`<tr>
+          <td style="font-weight:500">${DB.fmt(m.data)}</td>
+          <td>${m.peso||'—'} kg</td><td>${m.grassoPerc||'—'}%</td><td>${m.bmi||'—'}</td>
+          <td>${m.vita||'—'} cm</td><td>${m.fianchi||'—'} cm</td>
+          <td>${m.braccio||'—'} cm</td><td>${m.coscia||'—'} cm</td>
+          <td style="font-size:11px;color:var(--muted2)">${DB.esc(m.note||'')}</td>
+          <td><div class="actions"><button class="btn btn-danger btn-sm" onclick="confirmDeleteMisura('${m.id}')">🗑</button></div></td>
+        </tr>`).join('')}</tbody></table></div>`}
+  </div>`;
+}
+
+function svgLine(misure, field, color) {
+  const pts = misure.map(m=>({d:m.data,v:parseFloat(m[field])||0})).filter(p=>p.v>0);
+  if (pts.length < 2) return '<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px">Dati insufficienti</p>';
+  const W=680,H=130,P=28;
+  const vals=pts.map(p=>p.v);
+  let mn=Math.min(...vals)*0.97, mx=Math.max(...vals)*1.03;
+  if(mn===mx){mn-=1;mx+=1;}
+  const x=i=>P+(i/(pts.length-1))*(W-P*2);
+  const y=val=>P+(1-(val-mn)/(mx-mn))*(H-P*2);
+  const poly=pts.map((p,i)=>x(i).toFixed(1)+','+y(p.v).toFixed(1)).join(' ');
+  const area='M'+x(0).toFixed(1)+','+(H-P)+' '+pts.map((p,i)=>'L'+x(i).toFixed(1)+','+y(p.v).toFixed(1)).join(' ')+' L'+x(pts.length-1).toFixed(1)+','+(H-P)+' Z';
+  return '<div style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">'
+    +'<defs><linearGradient id="g_'+field+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+color+'" stop-opacity=".25"/><stop offset="100%" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'
+    +'<path d="'+area+'" fill="url(#g_'+field+')" />'
+    +'<polyline points="'+poly+'" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linejoin="round"/>'
+    +pts.map((p,i)=>'<circle cx="'+x(i).toFixed(1)+'" cy="'+y(p.v).toFixed(1)+'" r="4" fill="'+color+'"/>'
+      +'<text x="'+x(i).toFixed(1)+'" y="'+(y(p.v)-9).toFixed(1)+'" text-anchor="middle" style="fill:#ccc;font-size:9px;font-family:sans-serif">'+p.v+'</text>'
+      +'<text x="'+x(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" style="fill:#555;font-size:9px;font-family:sans-serif">'+(p.d||'').slice(5)+'</text>'
+    ).join('')
+    +'</svg></div>';
+}
+
+function openAddMisuraModal() {
+  if (!currentClientId) return;
+  const c = DB.getClient(currentClientId); if (!c) return;
+  modal('Nuova Misurazione — '+DB.esc(c.nome), `
+  <div class="row3">
+    <div class="field"><label>Data *</label><input type="date" id="m-data" value="${DB.today()}"></div>
+    <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" id="m-peso" placeholder="75.5"></div>
+    <div class="field"><label>% Massa Grassa</label><input type="number" step="0.1" id="m-grasso" placeholder="18.5"></div>
+  </div>
+  <div class="row3">
+    <div class="field"><label>Massa Muscolare (kg)</label><input type="number" step="0.1" id="m-muscoli"></div>
+    <div class="field"><label>BMI</label><input type="number" step="0.1" id="m-bmi" placeholder="22.4"></div>
+    <div class="field"><label>Metabolismo Basale</label><input type="number" id="m-bmr" placeholder="1800"></div>
+  </div>
+  <div class="row4">
+    <div class="field"><label>Vita (cm)</label><input type="number" step="0.5" id="m-vita"></div>
+    <div class="field"><label>Fianchi (cm)</label><input type="number" step="0.5" id="m-fianchi"></div>
+    <div class="field"><label>Braccio (cm)</label><input type="number" step="0.5" id="m-braccio"></div>
+    <div class="field"><label>Coscia (cm)</label><input type="number" step="0.5" id="m-coscia"></div>
+  </div>
+  <div class="row4">
+    <div class="field"><label>Torace (cm)</label><input type="number" step="0.5" id="m-torace"></div>
+    <div class="field"><label>Addome (cm)</label><input type="number" step="0.5" id="m-addome"></div>
+    <div class="field"><label>Polpaccio (cm)</label><input type="number" step="0.5" id="m-polpaccio"></div>
+    <div class="field"><label>Collo (cm)</label><input type="number" step="0.5" id="m-collo"></div>
+  </div>
+  <div class="field"><label>Note</label><textarea id="m-note" rows="2" placeholder="Misurazioni a digiuno…"></textarea></div>`, [
+    { label:'Annulla', cls:'btn-ghost', fn:closeModal },
+    { label:'Salva', cls:'btn-accent', fn:()=>{
+      DB.addMisura(currentClientId, {
+        data:v('m-data')||DB.today(), peso:v('m-peso'), grassoPerc:v('m-grasso'),
+        muscoli:v('m-muscoli'), bmi:v('m-bmi'), bmr:v('m-bmr'),
+        vita:v('m-vita'), fianchi:v('m-fianchi'), braccio:v('m-braccio'), coscia:v('m-coscia'),
+        torace:v('m-torace'), addome:v('m-addome'), polpaccio:v('m-polpaccio'), collo:v('m-collo'),
+        note:v('m-note'),
+      });
+      closeModal(); renderPage(); toast('Misurazione salvata ✓','ok');
+    }}
+  ], true);
+}
+
+function confirmDeleteMisura(mid) {
+  modal('Elimina Misurazione','Eliminare questa misurazione?',[
+    { label:'Annulla', cls:'btn-ghost', fn:closeModal },
+    { label:'Elimina', cls:'btn-danger', fn:()=>{ DB.deleteMisura(currentClientId,mid); closeModal(); renderPage(); toast('Eliminata','warn'); }}
+  ]);
+}
+
+// ── NUTRIZIONE ────────────────────────────────────────────────────────────────
+function renderNutrizione() {
+  if (!currentClientId) return noClient();
+  const c = DB.getClient(currentClientId); if (!c) return noClient();
+  const n = DB.getNutrizione(currentClientId);
+  if (!n) return `
+  <div class="empty" style="padding:80px 20px">
+    <div class="ico">🍽</div>
+    <p style="margin-bottom:18px">Nessun piano nutrizionale per ${DB.esc(c.nome)}.</p>
+    <button class="btn btn-accent" onclick="openNutrizioneModal()">+ Crea Piano Nutrizionale</button>
+  </div>`;
+  const pasti=n.pasti||[];
+  const totKcal=pasti.reduce((s,p)=>s+(parseFloat(p.kcal)||0),0);
+  const totProt=pasti.reduce((s,p)=>s+(parseFloat(p.prot)||0),0);
+  const totCarb=pasti.reduce((s,p)=>s+(parseFloat(p.carb)||0),0);
+  const totGras=pasti.reduce((s,p)=>s+(parseFloat(p.gras)||0),0);
+  return `
+  <div style="display:flex;gap:10px;margin-bottom:18px">
+    <button class="btn btn-accent" onclick="openNutrizioneModal()">✏️ Modifica Piano</button>
+    <button class="btn btn-ghost" onclick="printNutrizione()">🖨 Stampa</button>
+  </div>
+  <div class="macro-grid">
+    <div class="macro-box"><div class="mv" style="color:var(--accent)">${totKcal}</div><div class="ml">kcal/giorno</div></div>
+    <div class="macro-box"><div class="mv" style="color:#4a9eff">${totProt}g</div><div class="ml">Proteine</div></div>
+    <div class="macro-box"><div class="mv" style="color:#a78bfa">${totCarb}g</div><div class="ml">Carboidrati</div></div>
+    <div class="macro-box"><div class="mv" style="color:var(--accent2)">${totGras}g</div><div class="ml">Grassi</div></div>
+  </div>
+  ${n.obiettivo||n.note?`<div class="card" style="margin-bottom:14px">
+    ${n.obiettivo?`<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Obiettivo</div><div style="font-weight:500;margin-top:2px">${DB.esc(n.obiettivo)}</div></div>`:''}
+    ${n.note?`<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Note</div><div style="font-size:13px;color:var(--muted2);margin-top:2px;white-space:pre-wrap">${DB.esc(n.note)}</div></div>`:''}
+  </div>`:''}
+  ${pasti.map((p,i)=>`<div class="card" style="margin-bottom:12px">
+    <div class="card-title"><span>🍴 ${DB.esc(p.nome||('Pasto '+(i+1)))}</span><span style="color:var(--muted2);font-size:12px">${p.ora||''}</span></div>
+    <div class="macro-grid" style="margin-bottom:${p.alimenti?'12px':'0'}">
+      <div class="macro-box"><div class="mv" style="color:var(--accent)">${p.kcal||'—'}</div><div class="ml">kcal</div></div>
+      <div class="macro-box"><div class="mv" style="color:#4a9eff">${p.prot||'—'}g</div><div class="ml">Prot</div></div>
+      <div class="macro-box"><div class="mv" style="color:#a78bfa">${p.carb||'—'}g</div><div class="ml">Carb</div></div>
+      <div class="macro-box"><div class="mv" style="color:var(--accent2)">${p.gras||'—'}g</div><div class="ml">Gras</div></div>
+    </div>
+    ${p.alimenti?`<div style="font-size:13px;color:var(--muted2);white-space:pre-wrap;border-left:2px solid var(--border2);padding-left:10px">${DB.esc(p.alimenti)}</div>`:''}
+  </div>`).join('')}`;
+}
+
+function openNutrizioneModal() {
+  if (!currentClientId) return;
+  const n = DB.getNutrizione(currentClientId)||{pasti:[{nome:'Colazione',ora:'07:30'},{nome:'Pranzo',ora:'13:00'},{nome:'Cena',ora:'20:00'}]};
+  function ph(p,i) {
+    return `<div class="card" style="background:var(--surface2);margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <strong>Pasto ${i+1}</strong><button class="btn btn-danger btn-sm" onclick="this.closest('.card').remove()">Rimuovi</button>
+      </div>
+      <div class="row">
+        <div class="field"><label>Nome</label><input class="np-nome" value="${DB.esc(p.nome||'')}"></div>
+        <div class="field" style="max-width:100px"><label>Orario</label><input class="np-ora" value="${DB.esc(p.ora||'')}"></div>
+      </div>
+      <div class="row4">
+        <div class="field"><label>Kcal</label><input type="number" class="np-kcal" value="${p.kcal||''}"></div>
+        <div class="field"><label>Prot (g)</label><input type="number" class="np-prot" value="${p.prot||''}"></div>
+        <div class="field"><label>Carb (g)</label><input type="number" class="np-carb" value="${p.carb||''}"></div>
+        <div class="field"><label>Gras (g)</label><input type="number" class="np-gras" value="${p.gras||''}"></div>
+      </div>
+      <div class="field"><label>Alimenti</label><textarea class="np-ali" rows="2">${DB.esc(p.alimenti||'')}</textarea></div>
+    </div>`;
+  }
+  modal('Piano Nutrizionale',`
+  <div class="row"><div class="field"><label>Obiettivo Calorico</label><input id="n-obiettivo" value="${DB.esc(n.obiettivo||'')}"></div></div>
+  <div class="field" style="margin-bottom:14px"><label>Note Generali</label><textarea id="n-note" rows="2">${DB.esc(n.note||'')}</textarea></div>
+  <div id="npasti">${(n.pasti||[]).map((p,i)=>ph(p,i)).join('')}</div>
+  <button class="btn btn-ghost btn-sm" style="margin-bottom:8px" onclick="addNPasto()">+ Aggiungi Pasto</button>`,[
+    {label:'Annulla',cls:'btn-ghost',fn:closeModal},
+    {label:'Salva Piano',cls:'btn-accent',fn:saveNutrizione}
+  ],true);
+}
+
+function addNPasto() {
+  const cont=document.getElementById('npasti'); if(!cont) return;
+  const i=cont.querySelectorAll('.card').length;
+  const div=document.createElement('div');
+  div.innerHTML=`<div class="card" style="background:var(--surface2);margin-bottom:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <strong>Pasto ${i+1}</strong><button class="btn btn-danger btn-sm" onclick="this.closest('.card').remove()">Rimuovi</button>
+    </div>
+    <div class="row">
+      <div class="field"><label>Nome</label><input class="np-nome" placeholder="Spuntino"></div>
+      <div class="field" style="max-width:100px"><label>Orario</label><input class="np-ora" placeholder="10:30"></div>
+    </div>
+    <div class="row4">
+      <div class="field"><label>Kcal</label><input type="number" class="np-kcal"></div>
+      <div class="field"><label>Prot (g)</label><input type="number" class="np-prot"></div>
+      <div class="field"><label>Carb (g)</label><input type="number" class="np-carb"></div>
+      <div class="field"><label>Gras (g)</label><input type="number" class="np-gras"></div>
+    </div>
+    <div class="field"><label>Alimenti</label><textarea class="np-ali" rows="2"></textarea></div>
+  </div>`;
+  cont.appendChild(div.firstElementChild);
+}
+
+function saveNutrizione() {
+  const cards=document.querySelectorAll('#npasti .card');
+  const pasti=Array.from(cards).map(card=>({
+    nome:card.querySelector('.np-nome')?.value||'',ora:card.querySelector('.np-ora')?.value||'',
+    kcal:card.querySelector('.np-kcal')?.value||'',prot:card.querySelector('.np-prot')?.value||'',
+    carb:card.querySelector('.np-carb')?.value||'',gras:card.querySelector('.np-gras')?.value||'',
+    alimenti:card.querySelector('.np-ali')?.value||'',
+  }));
+  DB.setNutrizione(currentClientId,{obiettivo:v('n-obiettivo'),note:v('n-note'),pasti});
+  closeModal(); renderPage(); toast('Piano salvato ✓','ok');
+}
+
+function printNutrizione() {
+  const n=DB.getNutrizione(currentClientId); if(!n) return;
+  const c=DB.getClient(currentClientId); if(!c) return;
+  const pasti=n.pasti||[]; const e=DB.esc;
+  const tot=f=>pasti.reduce((s,p)=>s+(parseFloat(p[f])||0),0);
+  let h=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Nutrizione</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:sans-serif;font-size:10pt;color:#111}
+  .pg{width:210mm;margin:0 auto;padding:11mm}.bar{background:#111;color:#f5c518;font-size:16pt;text-align:center;padding:6px;letter-spacing:2px;margin-bottom:8px}
+  .macros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.mb{border:1px solid #ccc;border-radius:4px;padding:7px;text-align:center}
+  .mv{font-size:16pt;font-weight:600}.ml{font-size:8pt;color:#666}
+  .pasto{border:1px solid #ccc;border-radius:3px;margin-bottom:7px;overflow:hidden}
+  .ph{background:#222;color:#fff;padding:5px 10px;display:flex;justify-content:space-between}
+  .pm{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:6px 10px}
+  .pmb{background:#f5f5f5;border-radius:3px;padding:4px;text-align:center;font-size:8pt}
+  .ali{font-size:8.5pt;color:#444;white-space:pre-wrap;border-left:2px solid #f5c518;padding:4px 10px;background:#fffdf0}
+  @media print{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style>
+  </head><body><div class="pg">
+  <div class="bar">Piano Nutrizionale — ${e(c.nome)} ${e(c.cognome||'')}</div>
+  <div class="macros"><div class="mb"><div class="mv">${tot('kcal')}</div><div class="ml">kcal/gg</div></div>
+  <div class="mb"><div class="mv">${tot('prot')}g</div><div class="ml">Prot</div></div>
+  <div class="mb"><div class="mv">${tot('carb')}g</div><div class="ml">Carb</div></div>
+  <div class="mb"><div class="mv">${tot('gras')}g</div><div class="ml">Gras</div></div></div>`;
+  pasti.forEach(p=>{
+    h+=`<div class="pasto"><div class="ph"><strong>${e(p.nome||'Pasto')}</strong><span style="opacity:.7">${p.ora||''}</span></div>
+    <div class="pm"><div class="pmb"><strong>${p.kcal||0}</strong><br>kcal</div><div class="pmb"><strong>${p.prot||0}g</strong><br>Prot</div>
+    <div class="pmb"><strong>${p.carb||0}g</strong><br>Carb</div><div class="pmb"><strong>${p.gras||0}g</strong><br>Gras</div></div>
+    ${p.alimenti?`<div class="ali">${e(p.alimenti)}</div>`:''}</div>`;
+  });
+  h+=`</div></body></html>`;
+  const w=window.open('','_blank'); w.document.write(h); w.document.close(); setTimeout(()=>w.print(),600);
+}
+
+// ── PAGAMENTI ─────────────────────────────────────────────────────────────────
+function renderPagamenti() {
+  if (!currentClientId) return noClient();
+  const c = DB.getClient(currentClientId); if (!c) return noClient();
+  const pags   = DB.getPagamentiCliente(currentClientId);
+  const sorted = [...pags].sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  const now    = new Date();
+  const thisM  = now.toISOString().slice(0,7);
+  const totale = pags.reduce((s,p)=>s+(parseFloat(p.importo)||0),0);
+  const meseC  = pags.filter(p=>(p.data||'').startsWith(thisM)).reduce((s,p)=>s+(parseFloat(p.importo)||0),0);
+
+  let avviso = '';
+  if (c.scadenzaAbb) {
+    try {
+      const diff = Math.ceil((new Date(c.scadenzaAbb)-now)/86400000);
+      if (!isNaN(diff)) {
+        if (diff < 0) avviso = `<div style="background:rgba(224,92,42,.1);border:1px solid var(--accent2);border-radius:8px;padding:12px 16px;margin-bottom:14px;color:var(--accent2)">⚠️ Abbonamento <strong>scaduto</strong> il ${DB.fmt(c.scadenzaAbb)}</div>`;
+        else if (diff<=14) avviso = `<div style="background:rgba(245,197,24,.08);border:1px solid var(--accent);border-radius:8px;padding:12px 16px;margin-bottom:14px;color:var(--accent)">⏰ Scadenza tra <strong>${diff} giorni</strong> (${DB.fmt(c.scadenzaAbb)})</div>`;
+      }
+    } catch {}
+  }
+
+  return `
+  ${avviso}
+  <div style="display:flex;gap:10px;margin-bottom:18px">
+    <button class="btn btn-accent" onclick="openAddPagamentoModal()">+ Registra Pagamento</button>
+  </div>
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">
+    <div class="stat-box"><div class="val">${DB.fmtEur(totale)}</div><div class="lbl">Totale Incassato</div><div class="sub">${pags.length} pagamenti</div></div>
+    <div class="stat-box"><div class="val" style="color:var(--accentBlue)">${DB.fmtEur(meseC)}</div><div class="lbl">Mese Corrente</div><div class="sub">${thisM.replace('-','/')}</div></div>
+    <div class="stat-box"><div class="val" style="font-size:18px">${DB.esc(c.tipoAbb||'—')}</div><div class="lbl">Tipo Abbonamento</div><div class="sub">Scadenza: ${DB.fmt(c.scadenzaAbb)}</div></div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    ${sorted.length===0
+      ? `<div class="empty"><div class="ico">💰</div><p>Nessun pagamento registrato.</p></div>`
+      : `<div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Data</th><th>Importo</th><th>Tipo</th><th>Metodo</th><th>Periodo</th><th>Note</th><th></th></tr></thead>
+        <tbody>${sorted.map(p=>`<tr>
+          <td style="font-weight:500">${DB.fmt(p.data)}</td>
+          <td><span style="color:var(--accent3);font-weight:600">${DB.fmtEur(p.importo)}</span></td>
+          <td><span class="badge badge-blue">${DB.esc(p.tipo||'—')}</span></td>
+          <td style="color:var(--muted2)">${DB.esc(p.metodo||'—')}</td>
+          <td style="color:var(--muted2)">${DB.esc(p.periodo||'—')}</td>
+          <td style="font-size:11px;color:var(--muted2)">${DB.esc(p.note||'')}</td>
+          <td><div class="actions"><button class="btn btn-danger btn-sm" onclick="confirmDeletePagamento('${p.id}')">🗑</button></div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`}
+  </div>`;
+}
+
+function openAddPagamentoModal() {
+  if (!currentClientId) return;
+  const c = DB.getClient(currentClientId); if (!c) return;
+  modal('Registra Pagamento — '+DB.esc(c.nome), `
+  <div class="row3">
+    <div class="field"><label>Data *</label><input type="date" id="p-data" value="${DB.today()}"></div>
+    <div class="field"><label>Importo (€) *</label><input type="number" step="0.01" id="p-importo" placeholder="150.00"></div>
+    <div class="field"><label>Tipo</label><select id="p-tipo">
+      ${['Mensile','Trimestrale','Semestrale','Annuale','Sessione','Pacchetto','Online','Altro'].map(t=>`<option>${t}</option>`).join('')}
+    </select></div>
+  </div>
+  <div class="row3">
+    <div class="field"><label>Metodo</label><select id="p-metodo">
+      ${['Contanti','Bonifico','Carta','PayPal','Satispay','Altro'].map(m=>`<option>${m}</option>`).join('')}
+    </select></div>
+    <div class="field"><label>Periodo Coperto</label><input id="p-periodo" placeholder="es. Marzo 2026"></div>
+    <div class="field"><label>Nuova Scadenza Abb.</label><input type="date" id="p-scadenza"></div>
+  </div>
+  <div class="field"><label>Note</label><textarea id="p-note" rows="2"></textarea></div>`, [
+    {label:'Annulla',cls:'btn-ghost',fn:closeModal},
+    {label:'Registra',cls:'btn-green',fn:()=>{
+      const importo=v('p-importo');
+      if(!importo){toast("Inserisci l'importo",'warn');return;}
+      DB.addPagamento({clienteId:currentClientId,data:v('p-data')||DB.today(),importo,tipo:v('p-tipo'),metodo:v('p-metodo'),periodo:v('p-periodo'),note:v('p-note')});
+      const sc=v('p-scadenza'); if(sc) DB.updateClient(currentClientId,{scadenzaAbb:sc});
+      closeModal(); renderPage(); toast('Pagamento registrato ✓','ok');
+    }}
+  ]);
+}
+
+function confirmDeletePagamento(id) {
+  modal('Elimina Pagamento','Eliminare questo pagamento?',[
+    {label:'Annulla',cls:'btn-ghost',fn:closeModal},
+    {label:'Elimina',cls:'btn-danger',fn:()=>{DB.deletePagamento(id);closeModal();renderPage();toast('Eliminato','warn');}}
+  ]);
+}
+
+// ── APP.JS ────────────────────────────────────────────────────────────────────
+let currentPage     = 'dashboard';
+let currentClientId = null;
+
+const TITLES = {
+  dashboard:'DASHBOARD', clienti:'ANAGRAFICA CLIENTI',
+  schede:'SCHEDE ALLENAMENTO', progressi:'PROGRESSI & MISURE',
+  nutrizione:'PIANO NUTRIZIONALE', pagamenti:'PAGAMENTI'
+};
+
+const PAGES = {
+  dashboard: renderDashboard, clienti: renderClienti,
+  schede: renderSchede, progressi: renderProgressi,
+  nutrizione: renderNutrizione, pagamenti: renderPagamenti
+};
+
+// ── SHARED INPUT HELPER ───────────────────────────────────────────────────────
+function v(id) { return document.getElementById(id)?.value?.trim() || ''; }
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function go(page, el) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  (el || document.querySelector(`[data-page="${page}"]`))?.classList.add('active');
+  document.getElementById('pageTitle').textContent = TITLES[page] || page.toUpperCase();
+  renderPage();
+}
+
+function goAndSelect(page, id) {
+  currentClientId = id;
+  document.getElementById('clientSelect').value = id;
+  go(page);
+}
+
+function renderPage() {
+  const fn = PAGES[currentPage];
+  document.getElementById('page').innerHTML = fn ? fn() : '';
+}
+
+// ── CLIENT SELECTOR ───────────────────────────────────────────────────────────
+function refreshClientSelector(selectId) {
+  const sel = document.getElementById('clientSelect');
+  const keep = selectId || currentClientId;
+  sel.innerHTML = '<option value="">— Seleziona cliente —</option>';
+  [...DB.getClients()]
+    .sort((a,b) => (`${a.nome}${a.cognome||''}`).localeCompare(`${b.nome}${b.cognome||''}`))
+    .forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id;
+      o.textContent = `${c.nome} ${c.cognome||''}`.trim();
+      if (c.id === keep) o.selected = true;
+      sel.appendChild(o);
+    });
+  if (keep && DB.getClient(keep)) {
+    sel.value = keep;
+    currentClientId = keep;
+  } else if (!DB.getClient(currentClientId)) {
+    currentClientId = null;
+    sel.value = '';
+  }
+}
+
+function onClientChange() {
+  currentClientId = document.getElementById('clientSelect').value || null;
+  renderPage();
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function modal(title, content, buttons, large) {
+  document.getElementById('mTitle').textContent = title;
+  document.getElementById('mContent').innerHTML = content;
+  document.getElementById('modalBox').className = large ? 'modal modal-lg' : 'modal';
+  const btns = document.getElementById('mBtns');
+  btns.innerHTML = '';
+  (buttons||[]).forEach(b => {
+    const el = document.createElement('button');
+    el.className = 'btn ' + (b.cls||'btn-ghost');
+    el.textContent = b.label;
+    el.onclick = b.fn;
+    btns.appendChild(el);
+  });
+  document.getElementById('overlay').style.display = 'flex';
+}
+function closeModal() { document.getElementById('overlay').style.display = 'none'; }
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let _tt;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type||'');
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.className = 'toast', 3000);
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function noClient() {
+  return `<div class="empty"><div class="ico">👤</div><p>Seleziona un cliente in alto<br>oppure creane uno nuovo.</p></div>`;
+}
+
+function exportClientJSON() {
+  if (!currentClientId) { toast('Seleziona un cliente', 'warn'); return; }
+  const c = DB.getClient(currentClientId); if (!c) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(c,null,2)], {type:'application/json'}));
+  a.download = `${c.nome}_${c.cognome||'export'}.json`;
+  a.click();
+  toast('Export completato ✓', 'ok');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+(function init() {
+  refreshClientSelector();
+  go('dashboard');
+})();
+
+</script>
+</body>
+</html>
