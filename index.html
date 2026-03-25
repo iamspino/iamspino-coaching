@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#0f0f0f">
 <title>IamSpino Coaching</title>
 <link rel="apple-touch-icon" href="icon.png">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -243,152 +243,245 @@ table.wgrid .kgl{color:var(--muted);font-size:10px;text-align:left;padding:4px 6
 <div class="toast" id="toast"></div>
 
 
-<script>
-// ── DB.JS ─────────────────────────────────────────────────────────────────────
+<script type="module">
+
+// ── FIREBASE CONFIG ───────────────────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAb6xP3pt3_CjdDxWhXsAIbhzz1va_-aN4",
+  authDomain: "iamspino-coaching.firebaseapp.com",
+  projectId: "iamspino-coaching",
+  storageBucket: "iamspino-coaching.firebasestorage.app",
+  messagingSenderId: "209519262391",
+  appId: "1:209519262391:web:dcdec856fa022d7e60eb32"
+};
+
+// ── DB.JS — Firebase + localStorage fallback ──────────────────────────────────
 const DB = (() => {
+  // LocalStorage as cache/fallback
   const KEY = 'iamspino_v1';
   let _d = null;
+  let _db = null;  // Firestore instance
+  let _syncEnabled = false;
 
-  function defaults() {
-    return { clienti: [], pagamenti: [] };
-  }
+  function defaults() { return { clienti: [], pagamenti: [] }; }
 
-  function load() {
+  function loadLocal() {
     try {
       const raw = localStorage.getItem(KEY);
       _d = raw ? JSON.parse(raw) : defaults();
+      if (!Array.isArray(_d.clienti))   _d.clienti   = [];
+      if (!Array.isArray(_d.pagamenti)) _d.pagamenti = [];
     } catch(e) { _d = defaults(); }
-    if (!Array.isArray(_d.clienti))   _d.clienti   = [];
-    if (!Array.isArray(_d.pagamenti)) _d.pagamenti = [];
-    return _d;
   }
 
-  // Always save synchronously and immediately
-  function save() {
+  function saveLocal() {
     try { localStorage.setItem(KEY, JSON.stringify(_d)); } catch(e) {}
     const dot = document.getElementById('dot');
     if (dot) dot.classList.remove('dirty');
   }
 
+  // ── FIREBASE SYNC ────────────────────────────────────────────────────────────
+  async function initFirebase() {
+    try {
+      const { initializeApp }        = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
+      const { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, onSnapshot }
+                                     = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+      const fbApp = initializeApp(FIREBASE_CONFIG);
+      _db = getFirestore(fbApp);
+      _syncEnabled = true;
+
+      // Pull all data from Firebase on startup
+      await pullFromFirebase(getFirestore, doc, collection, getDocs);
+
+      // Listen for real-time changes
+      const clientiRef = collection(_db, 'clienti');
+      onSnapshot(clientiRef, (snap) => {
+        _d.clienti = [];
+        snap.forEach(d => _d.clienti.push({ id: d.id, ...d.data() }));
+        saveLocal();
+        if (typeof refreshClientSelector === 'function') refreshClientSelector();
+        if (typeof renderPage === 'function') renderPage();
+      });
+
+      const pagsRef = collection(_db, 'pagamenti');
+      onSnapshot(pagsRef, (snap) => {
+        _d.pagamenti = [];
+        snap.forEach(d => _d.pagamenti.push({ id: d.id, ...d.data() }));
+        saveLocal();
+      });
+
+      showSyncStatus(true);
+    } catch(e) {
+      console.warn('Firebase non disponibile, uso locale:', e);
+      showSyncStatus(false);
+    }
+  }
+
+  async function pullFromFirebase(getFirestore, doc, collection, getDocs) {
+    try {
+      const { collection: col, getDocs: gd } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+      const clientiSnap = await gd(col(_db, 'clienti'));
+      const pagsSnap    = await gd(col(_db, 'pagamenti'));
+      _d.clienti   = clientiSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      _d.pagamenti = pagsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      saveLocal();
+    } catch(e) { console.warn('Pull failed:', e); }
+  }
+
+  function showSyncStatus(ok) {
+    const dot = document.getElementById('dot');
+    if (!dot) return;
+    dot.title = ok ? 'Sincronizzato con Firebase ☁️' : 'Offline — dati locali';
+    dot.style.background = ok ? '#4caf50' : '#f5c518';
+  }
+
+  async function pushToFirebase(collection, id, data) {
+    if (!_syncEnabled || !_db) return;
+    try {
+      const { doc, setDoc, collection: col } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+      await setDoc(doc(_db, collection, id), data);
+    } catch(e) { console.warn('Push failed:', e); }
+  }
+
+  async function deleteFromFirebase(collection, id) {
+    if (!_syncEnabled || !_db) return;
+    try {
+      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+      await deleteDoc(doc(_db, collection, id));
+    } catch(e) { console.warn('Delete failed:', e); }
+  }
+
+  // ── SAVE ─────────────────────────────────────────────────────────────────────
+  function save() { saveLocal(); }
+
   let _t = null;
-  function dirtySave() {
+  function delaySave() {
     const dot = document.getElementById('dot');
     if (dot) dot.classList.add('dirty');
     clearTimeout(_t);
-    _t = setTimeout(save, 500);
+    _t = setTimeout(save, 700);
   }
 
-  function data() { return _d || load(); }
+  function get() { if (!_d) loadLocal(); return _d; }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
-  // ── HELPERS ──────────────────────────────────────────────────────────────────
-  function uid()    { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-  function today()  { return new Date().toISOString().slice(0,10); }
-  function esc(s)   { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function fmt(d)   { if (!d) return '—'; try { const [y,m,g]=d.split('-'); return `${g}/${m}/${y}`; } catch{return d;} }
-  function fmtEur(n){ return '€ ' + (parseFloat(n)||0).toFixed(2); }
-  function age(dob) {
-    if (!dob) return '—';
-    try {
-      const b = new Date(dob), now = new Date();
-      let a = now.getFullYear() - b.getFullYear();
-      if (now < new Date(now.getFullYear(), b.getMonth(), b.getDate())) a--;
-      return isNaN(a) ? '—' : a;
-    } catch { return '—'; }
-  }
-
-  // ── CLIENTI ──────────────────────────────────────────────────────────────────
-  function getClients()  { return data().clienti; }
-  function getClient(id) { return data().clienti.find(c => c.id === id) || null; }
+  // ── CLIENTS ──────────────────────────────────────────────────────────────────
+  function getClients()  { return get().clienti; }
+  function getClient(id) { return get().clienti.find(c => c.id === id) || null; }
 
   function addClient(fields) {
-    const c = { id: uid(), createdAt: Date.now(), schede: [], misure: [], ...fields };
-    data().clienti.push(c);
-    save(); // immediate — no debounce
+    const c = { id: uid(), createdAt: Date.now(), schede:[], misure:[],
+      nome:'', cognome:'', sesso:'', dataNascita:'', telefono:'', email:'',
+      obiettivo:'', livello:'', stato:'attivo', tipoAbb:'', inizioAbb:'',
+      scadenzaAbb:'', altezza:'', anamnesi:'', ...fields };
+    get().clienti.push(c);
+    save();
+    pushToFirebase('clienti', c.id, c);
     return c;
   }
 
   function updateClient(id, fields) {
-    const c = getClient(id);
-    if (!c) return;
+    const c = getClient(id); if (!c) return;
     Object.assign(c, fields);
-    save(); // immediate
+    save();
+    pushToFirebase('clienti', id, c);
   }
 
   function deleteClient(id) {
-    data().clienti   = data().clienti.filter(c => c.id !== id);
-    data().pagamenti = data().pagamenti.filter(p => p.clienteId !== id);
+    get().clienti   = get().clienti.filter(c => c.id !== id);
+    get().pagamenti = get().pagamenti.filter(p => p.clienteId !== id);
     save();
+    deleteFromFirebase('clienti', id);
   }
 
   // ── SCHEDE ───────────────────────────────────────────────────────────────────
   function getSchede(cid) { return getClient(cid)?.schede || []; }
 
   function addScheda(cid, fields) {
-    const c = getClient(cid); if (!c) return;
-    if (!c.schede) c.schede = [];
-    c.schede.push({ id: uid(), createdAt: Date.now(), esercizi: [], ...fields });
-    save();
+    const c = getClient(cid); if (!c) return null;
+    if (!Array.isArray(c.schede)) c.schede = [];
+    const s = { id: uid(), createdAt: Date.now(), label:'A', riscaldamento:'', note:'', esercizi:[], ...fields };
+    c.schede.push(s); save(); pushToFirebase('clienti', cid, c); return s;
   }
 
   function updateScheda(cid, sid, fields) {
     const c = getClient(cid); if (!c) return;
     const s = (c.schede||[]).find(s => s.id === sid); if (!s) return;
-    Object.assign(s, fields); save();
+    Object.assign(s, fields); save(); pushToFirebase('clienti', cid, c);
   }
 
   function deleteScheda(cid, sid) {
     const c = getClient(cid); if (!c) return;
-    c.schede = (c.schede||[]).filter(s => s.id !== sid); save();
+    c.schede = (c.schede||[]).filter(s => s.id !== sid);
+    save(); pushToFirebase('clienti', cid, c);
   }
 
-  // ── ESERCIZI (direct mutation, caller calls save) ─────────────────────────
-  function getScheda(cid, sid) {
-    return (getClient(cid)?.schede||[]).find(s => s.id === sid) || null;
-  }
-
-  // ── MISURE ────────────────────────────────────────────────────────────────
+  // ── MISURE ────────────────────────────────────────────────────────────────────
   function getMisure(cid) { return getClient(cid)?.misure || []; }
 
   function addMisura(cid, fields) {
     const c = getClient(cid); if (!c) return;
-    if (!c.misure) c.misure = [];
+    if (!Array.isArray(c.misure)) c.misure = [];
     c.misure.push({ id: uid(), data: today(), ...fields });
     c.misure.sort((a,b) => (a.data||'').localeCompare(b.data||''));
-    save();
+    save(); pushToFirebase('clienti', cid, c);
   }
 
   function deleteMisura(cid, mid) {
     const c = getClient(cid); if (!c) return;
-    c.misure = (c.misure||[]).filter(m => m.id !== mid); save();
+    c.misure = (c.misure||[]).filter(m => m.id !== mid);
+    save(); pushToFirebase('clienti', cid, c);
   }
 
-  // ── NUTRIZIONE ───────────────────────────────────────────────────────────
+  // ── NUTRIZIONE ────────────────────────────────────────────────────────────────
   function getNutrizione(cid)    { return getClient(cid)?.nutrizione || null; }
-  function setNutrizione(cid, n) { const c = getClient(cid); if (!c) return; c.nutrizione = n; save(); }
+  function setNutrizione(cid, n) {
+    const c = getClient(cid); if (!c) return;
+    c.nutrizione = n; save(); pushToFirebase('clienti', cid, c);
+  }
 
-  // ── PAGAMENTI ────────────────────────────────────────────────────────────
-  function getPagamentiCliente(cid) { return (data().pagamenti||[]).filter(p => p.clienteId === cid); }
-  function getAllPagamenti()         { return data().pagamenti || []; }
+  // ── PAGAMENTI ─────────────────────────────────────────────────────────────────
+  function getPagamentiCliente(cid) { return (get().pagamenti||[]).filter(p => p.clienteId === cid); }
+  function getAllPagamenti()         { return get().pagamenti || []; }
 
   function addPagamento(fields) {
-    if (!data().pagamenti) data().pagamenti = [];
-    const p = { id: uid(), data: today(), ...fields };
-    data().pagamenti.push(p); save(); return p;
+    const rec = { id: uid(), data: today(), ...fields };
+    get().pagamenti.push(rec);
+    save(); pushToFirebase('pagamenti', rec.id, rec); return rec;
   }
 
   function deletePagamento(id) {
-    data().pagamenti = (data().pagamenti||[]).filter(p => p.id !== id); save();
+    get().pagamenti = get().pagamenti.filter(p => p.id !== id);
+    save(); deleteFromFirebase('pagamenti', id);
   }
 
-  load();
+  // ── HELPERS ───────────────────────────────────────────────────────────────────
+  function today() { return new Date().toISOString().slice(0,10); }
+  function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmt(d)  { if (!d) return '—'; try { const [y,m,g]=d.split('-'); return g+'/'+m+'/'+y; } catch(e){return d;} }
+  function fmtEur(n){ return '€ '+(parseFloat(n)||0).toFixed(2); }
+  function age(dob){
+    if (!dob) return '—';
+    try {
+      const d=new Date(dob),now=new Date();
+      if (isNaN(d.getTime())) return '—';
+      let a=now.getFullYear()-d.getFullYear();
+      if (now<new Date(now.getFullYear(),d.getMonth(),d.getDate())) a--;
+      return a;
+    } catch(e){return '—';}
+  }
+
+  loadLocal();
+  // Init Firebase async — app works immediately with local data
+  setTimeout(() => initFirebase(), 100);
 
   return {
-    save, dirtySave, uid, today, esc, fmt, fmtEur, age,
     getClients, getClient, addClient, updateClient, deleteClient,
-    getSchede, getScheda, addScheda, updateScheda, deleteScheda,
+    getSchede, addScheda, updateScheda, deleteScheda,
     getMisure, addMisura, deleteMisura,
     getNutrizione, setNutrizione,
     getPagamentiCliente, getAllPagamenti, addPagamento, deletePagamento,
+    save, delaySave, uid, today, esc, fmt, fmtEur, age
   };
 })();
 
