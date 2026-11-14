@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // App cliente: si può leggere un documento SOLO conoscendo il codice esatto.
+    // "list" è bloccato, così nessuno può scaricare l'elenco di tutti i codici/clienti.
+    match /app_clienti/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if true;   // il gestionale coach non ha ancora il login (vedi README)
+    }
+
+    // Dati del gestionale coach (come oggi).
+    match /clienti/{id}   { allow read, write: if true; }
+    match /pagamenti/{id} { allow read, write: if true; }
+  }
+}

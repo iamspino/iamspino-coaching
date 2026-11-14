@@ -348,6 +348,32 @@ const DB = (() => {
 
   function save() { saveLocal(); }
 
+  // Salva in locale E sincronizza su Firebase il documento del cliente
+  function syncClient(cid) {
+    const c = getClient(cid); if (!c) return;
+    save(); push("clienti", cid, c);
+  }
+
+  // ── APP CLIENTE ──
+  // Ogni cliente ha un documento "app_clienti/{codice}" con SOLO le schede inviate.
+  function appDoc(code) {
+    if (!_synced || !_firestore) throw new Error("Firebase non connesso");
+    return _firestore.collection("app_clienti").doc(code);
+  }
+  function publishAppScheda(code, header, scheda) {
+    const clean = JSON.parse(JSON.stringify(scheda));
+    return appDoc(code).set({ ...header, updatedAt: Date.now(), schede: { [scheda.id]: clean } }, { merge: true });
+  }
+  function unpublishAppScheda(code, sid) {
+    return appDoc(code).set({ updatedAt: Date.now(), schede: { [sid]: firebase.firestore.FieldValue.delete() } }, { merge: true });
+  }
+  function writeAppDoc(code, data) {
+    return appDoc(code).set(JSON.parse(JSON.stringify({ ...data, updatedAt: Date.now() })));
+  }
+  function deleteAppDoc(code) {
+    return appDoc(code).delete();
+  }
+
   let _t = null;
   function delaySave() {
     const dot = document.getElementById("dot");
@@ -378,6 +404,8 @@ const DB = (() => {
   }
 
   function deleteClient(id) {
+    const old = getClient(id);
+    if (old && old.appCode && _firestore) _firestore.collection("app_clienti").doc(old.appCode).delete().catch(()=>{});
     get().clienti   = get().clienti.filter(c => c.id !== id);
     get().pagamenti = get().pagamenti.filter(p => p.clienteId !== id);
     save(); remove("clienti", id);
@@ -464,7 +492,8 @@ const DB = (() => {
     getMisure, addMisura, deleteMisura,
     getNutrizione, setNutrizione,
     getPagamentiCliente, getAllPagamenti, addPagamento, deletePagamento,
-    save, delaySave, uid, today, esc, fmt, fmtEur, age
+    save, delaySave, uid, today, esc, fmt, fmtEur, age,
+    syncClient, publishAppScheda, unpublishAppScheda, writeAppDoc, deleteAppDoc
   };
 })();
 
@@ -745,8 +774,12 @@ function renderSchede() {
   if (!c) return noClient();
   const schede = c.schede || [];
   return `
-  <div style="display:flex;gap:10px;margin-bottom:18px">
+  <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
     <button class="btn btn-accent" onclick="openSchedaForm(null)">+ Nuova Scheda</button>
+    <button class="btn btn-ghost" onclick="openAppAccessModal()">📲 Accesso App Cliente</button>
+    ${c.appCode
+      ? `<span class="badge badge-green">App attiva · codice ${DB.esc(c.appCode)}</span>`
+      : `<span class="badge badge-yellow">App non ancora attivata</span>`}
   </div>
   ${schede.length === 0
     ? `<div class="empty"><div class="ico">📋</div><p>Nessuna scheda per questo cliente.</p></div>`
@@ -761,8 +794,11 @@ function schedaCard(s, si) {
         <span style="font-family:'Bebas Neue',cursive;font-size:24px;color:var(--accent)">${DB.esc(s.label||'Scheda '+(si+1))}</span>
         <span style="color:var(--muted2);font-size:12px">${(s.esercizi||[]).length} esercizi</span>
         ${s.riscaldamento?`<span style="font-size:12px;color:var(--muted2)">⏱ ${DB.esc(s.riscaldamento)}</span>`:''}
+        ${appStatusBadge(s)}
       </span>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-green btn-sm" onclick="openInviaScheda('${s.id}')">📲 ${s.inviataAt?'Reinvia':'Invia'} in app</button>
+        ${s.inviataAt?`<button class="btn btn-ghost btn-sm" onclick="confirmRitiraScheda('${s.id}')" title="Togli la scheda dall'app del cliente">Ritira</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="openSchedaForm('${s.id}')">✏️ Info</button>
         <button class="btn btn-ghost btn-sm" onclick="printScheda('${s.id}')">🖨 Stampa</button>
         <button class="btn btn-danger btn-sm" onclick="confirmDeleteScheda('${s.id}')">🗑</button>
@@ -863,34 +899,35 @@ function addEsercizio(sid) {
   const ex = newEx();
   s.esercizi.push(ex);
   _openEx[sid+ex.id] = true;
-  DB.save(); renderPage();
+  DB.syncClient(currentClientId); renderPage();
 }
 
 function deleteEsercizio(sid, exId) {
   const s = getMutScheda(sid); if (!s) return;
   s.esercizi = (s.esercizi||[]).filter(e => e.id !== exId);
-  DB.save(); renderPage();
+  DB.syncClient(currentClientId); renderPage();
 }
 
 function updateExField(sid, exId, field, val) {
   const s = getMutScheda(sid); if (!s) return;
   const ex = (s.esercizi||[]).find(e => e.id === exId); if (!ex) return;
   ex[field] = val;
-  if (field === 'nome' || field === 'tipo') { DB.save(); renderPage(); } else DB.save();
+  DB.syncClient(currentClientId);
+  if (field === 'nome' || field === 'tipo') renderPage();
 }
 
 function updateExSett(sid, exId, idx, val) {
   const s = getMutScheda(sid); if (!s) return;
   const ex = (s.esercizi||[]).find(e => e.id === exId); if (!ex) return;
   if (!ex.settimane || ex.settimane.length !== 7) ex.settimane = Array(7).fill('');
-  ex.settimane[idx] = val; DB.save();
+  ex.settimane[idx] = val; DB.syncClient(currentClientId);
 }
 
 function updateKgCell(sid, exId, ri, ci, val) {
   const s = getMutScheda(sid); if (!s) return;
   const ex = (s.esercizi||[]).find(e => e.id === exId); if (!ex) return;
   if (!ex.kgRows || !ex.kgRows[ri]) return;
-  ex.kgRows[ri][ci] = val; DB.save();
+  ex.kgRows[ri][ci] = val; DB.syncClient(currentClientId);
 }
 
 function addKgRow(sid, exId) {
@@ -898,7 +935,7 @@ function addKgRow(sid, exId) {
   const ex = (s.esercizi||[]).find(e => e.id === exId); if (!ex) return;
   if (!ex.kgRows) ex.kgRows = [];
   ex.kgRows.push(Array(7).fill(''));
-  DB.save(); renderPage();
+  DB.syncClient(currentClientId); renderPage();
 }
 
 function removeKgRow(sid, exId, ri) {
@@ -906,7 +943,7 @@ function removeKgRow(sid, exId, ri) {
   const ex = (s.esercizi||[]).find(e => e.id === exId); if (!ex) return;
   if (!ex.kgRows || ex.kgRows.length <= 1) return;
   ex.kgRows.splice(ri, 1);
-  DB.save(); renderPage();
+  DB.syncClient(currentClientId); renderPage();
 }
 
 // ── SCHEDA FORM ───────────────────────────────────────────────────────────────
@@ -926,7 +963,7 @@ function openSchedaForm(id) {
     { label:'Annulla', cls:'btn-ghost', fn:closeModal },
     { label:id?'Salva':'Crea Scheda', cls:'btn-accent', fn:()=>{
       const fields = { label:v('sf-label')||'A', riscaldamento:v('sf-risc'), note:v('sf-note') };
-      if (id) { const sc=getMutScheda(id); if(sc) { Object.assign(sc,fields); DB.save(); } }
+      if (id) { const sc=getMutScheda(id); if(sc) { Object.assign(sc,fields); DB.syncClient(currentClientId); } }
       else    DB.addScheda(currentClientId, fields);
       closeModal(); renderPage(); toast('Scheda salvata ✓','ok');
     }}
@@ -937,9 +974,175 @@ function confirmDeleteScheda(id) {
   modal('Elimina Scheda','Eliminare questa scheda e tutti i suoi esercizi?',[
     { label:'Annulla', cls:'btn-ghost', fn:closeModal },
     { label:'Elimina', cls:'btn-danger', fn:()=>{
+      const cl = DB.getClient(currentClientId);
+      const wasSent = (cl?.schede||[]).find(x=>x.id===id)?.inviataAt;
       DB.deleteScheda(currentClientId,id); closeModal(); renderPage(); toast('Scheda eliminata','warn');
+      if (wasSent && cl.appCode) DB.unpublishAppScheda(cl.appCode, id).catch(()=>{});
     }}
   ]);
+}
+
+// ── APP CLIENTE: INVIO SCHEDE ─────────────────────────────────────────────────
+// Link dell'app cliente. Se il gestionale è aperto da un sito (http/https) usa lo
+// stesso indirizzo; altrimenti (file locale / Electron) usa CLIENT_APP_URL.
+const CLIENT_APP_URL = 'https://iamspino.github.io/iamspino-coaching/cliente.html';
+const APP_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function clientAppUrl(code) {
+  let base = CLIENT_APP_URL;
+  if (/^https?:$/.test(location.protocol)) base = new URL('cliente.html', location.href).href;
+  return base + '?c=' + encodeURIComponent(code);
+}
+
+function newAppCode() {
+  const rnd = new Uint32Array(8); crypto.getRandomValues(rnd);
+  return Array.from(rnd, n => APP_CODE_CHARS[n % APP_CODE_CHARS.length]).join('');
+}
+
+function schedaHash(s) {
+  const str = JSON.stringify([s.label||'', s.riscaldamento||'', s.note||'', s.esercizi||[]]);
+  let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
+function appStatusBadge(s) {
+  if (!s.inviataAt) return `<span class="badge" style="color:var(--muted);border:1px solid var(--border2)">Non inviata</span>`;
+  const when = new Date(s.inviataAt).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' });
+  return s.inviataHash === schedaHash(s)
+    ? `<span class="badge badge-green" title="Il cliente vede questa versione">✓ In app dal ${when}</span>`
+    : `<span class="badge badge-red" title="Hai modificato la scheda dopo l'invio: reinviala per aggiornarla">⚠ Modifiche non inviate</span>`;
+}
+
+function appHeader(c) {
+  return { nome: c.nome || '', cognome: c.cognome || '', attivo: true };
+}
+
+function appSchedaPayload(s, idx, messaggio) {
+  return {
+    id: s.id, ordine: idx, label: s.label || '', riscaldamento: s.riscaldamento || '',
+    note: s.note || '', messaggio: messaggio || '', inviataAt: Date.now(),
+    esercizi: (s.esercizi || []).map(ex => ({
+      id: ex.id, nome: ex.nome || '', tipo: ex.tipo || 'Singolo', note: ex.note || '',
+      video: ex.video || '', tut: ex.tut || '', rip: ex.rip || '', prep: ex.prep || '',
+      settimane: Array.isArray(ex.settimane) ? ex.settimane : [],
+      kgRows: Array.isArray(ex.kgRows) ? ex.kgRows : []
+    }))
+  };
+}
+
+// Crea il codice di accesso se manca e prepara il documento dell'app
+async function ensureAppCode(c) {
+  if (c.appCode) return c.appCode;
+  const code = newAppCode();
+  await DB.writeAppDoc(code, { ...appHeader(c), schede: {} });
+  DB.updateClient(c.id, { appCode: code });
+  return code;
+}
+
+function openInviaScheda(sid) {
+  const c = DB.getClient(currentClientId); if (!c) return;
+  const s = (c.schede||[]).find(x => x.id === sid); if (!s) return;
+  const nEx = (s.esercizi||[]).filter(e => e.nome).length;
+  modal(`Invia Scheda ${s.label||''} a ${c.nome}`, `
+  <p style="color:var(--muted2);font-size:13px;margin-bottom:14px">
+    ${s.inviataAt ? 'La scheda è già nell\'app del cliente: reinviandola verrà aggiornata con le ultime modifiche.'
+                  : 'La scheda apparirà subito nell\'app di '+DB.esc(c.nome)+'.'}
+    ${nEx===0 ? '<br><strong style="color:var(--accent2)">Attenzione: la scheda non ha esercizi compilati.</strong>' : ''}
+  </p>
+  <div class="field"><label>Messaggio per il cliente (facoltativo)</label>
+    <textarea id="inv-msg" rows="3" placeholder="es. Da questa settimana aumentiamo il volume, mi raccomando la tecnica!"></textarea></div>`, [
+    { label:'Annulla', cls:'btn-ghost', fn:closeModal },
+    { label:'📲 Invia', cls:'btn-green', fn: () => inviaScheda(sid, v('inv-msg')) }
+  ]);
+}
+
+async function inviaScheda(sid, messaggio) {
+  const c = DB.getClient(currentClientId); if (!c) return;
+  const idx = (c.schede||[]).findIndex(x => x.id === sid); if (idx < 0) return;
+  const s = c.schede[idx];
+  const firstTime = !c.appCode;
+  try {
+    const code = await ensureAppCode(c);
+    await DB.publishAppScheda(code, appHeader(c), appSchedaPayload(s, idx, messaggio));
+    const cl = DB.getClient(currentClientId);
+    const sc = (cl.schede||[]).find(x => x.id === sid);
+    if (sc) { sc.inviataAt = Date.now(); sc.inviataHash = schedaHash(sc); DB.syncClient(cl.id); }
+    closeModal(); renderPage();
+    toast('Scheda inviata in app ✓', 'ok');
+    if (firstTime) openAppAccessModal(); // primo invio: mostra il link da mandare al cliente
+  } catch (e) {
+    console.warn(e);
+    toast('Invio non riuscito: controlla la connessione', 'warn');
+  }
+}
+
+function confirmRitiraScheda(sid) {
+  const c = DB.getClient(currentClientId); if (!c || !c.appCode) return;
+  modal('Ritira Scheda', 'Togliere questa scheda dall\'app del cliente? Resterà comunque salvata qui.', [
+    { label:'Annulla', cls:'btn-ghost', fn:closeModal },
+    { label:'Ritira', cls:'btn-danger', fn: async () => {
+      try {
+        await DB.unpublishAppScheda(c.appCode, sid);
+        const sc = getMutScheda(sid);
+        if (sc) { delete sc.inviataAt; delete sc.inviataHash; DB.syncClient(c.id); }
+        closeModal(); renderPage(); toast('Scheda ritirata dall\'app', 'warn');
+      } catch (e) { toast('Operazione non riuscita: controlla la connessione', 'warn'); }
+    }}
+  ]);
+}
+
+async function openAppAccessModal() {
+  const c = DB.getClient(currentClientId); if (!c) { toast('Seleziona un cliente prima','warn'); return; }
+  let code = c.appCode;
+  if (!code) {
+    try { code = await ensureAppCode(c); }
+    catch (e) { toast('Impossibile attivare l\'app: controlla la connessione', 'warn'); return; }
+  }
+  const url = clientAppUrl(code);
+  const msg = `Ciao ${c.nome}! 💪 Da oggi trovi le tue schede di allenamento nell'app IamSpino Coaching.\n\nApri questo link: ${url}\n\nCodice di accesso: ${code}\n\nConsiglio: aggiungi la pagina alla schermata Home per averla sempre a portata di mano.`;
+  const phone = (c.telefono||'').replace(/[^0-9]/g,'');
+  const wa = 'https://wa.me/' + (phone ? (phone.length <= 10 ? '39'+phone : phone) : '') + '?text=' + encodeURIComponent(msg);
+  const nSent = (c.schede||[]).filter(s => s.inviataAt).length;
+  modal('📲 Accesso App — ' + (c.nome||''), `
+  <p style="color:var(--muted2);font-size:13px;margin-bottom:16px">
+    Manda al cliente il link (o il codice). Vedrà solo le schede che gli invii, aggiornate in tempo reale.
+    Schede attualmente in app: <strong style="color:var(--text)">${nSent}</strong>.</p>
+  <div class="field" style="margin-bottom:12px"><label>Codice di accesso</label>
+    <div style="font-family:'Bebas Neue',cursive;font-size:34px;letter-spacing:6px;color:var(--accent)">${DB.esc(code)}</div></div>
+  <div class="field" style="margin-bottom:16px"><label>Link app cliente</label>
+    <input id="app-url" readonly value="${DB.esc(url)}" onclick="this.select()"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="btn btn-green" href="${DB.esc(wa)}" target="_blank" rel="noopener">💬 Invia su WhatsApp</a>
+    <button class="btn btn-ghost" onclick="copyText(document.getElementById('app-url').value)">📋 Copia link</button>
+    <a class="btn btn-ghost" href="${DB.esc(url)}" target="_blank" rel="noopener">👁 Anteprima</a>
+  </div>
+  <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">
+    Se il codice è stato condiviso con qualcun altro puoi generarne uno nuovo: il vecchio link smetterà di funzionare.
+    <div style="margin-top:8px"><button class="btn btn-danger btn-sm" onclick="regenerateAppCode()">🔄 Genera nuovo codice</button></div>
+  </div>`, [{ label:'Chiudi', cls:'btn-ghost', fn:closeModal }]);
+}
+
+async function regenerateAppCode() {
+  const c = DB.getClient(currentClientId); if (!c) return;
+  const old = c.appCode, code = newAppCode();
+  const schede = {};
+  (c.schede||[]).forEach((s, i) => {
+    if (s.inviataAt) schede[s.id] = { ...appSchedaPayload(s, i, ''), inviataAt: s.inviataAt };
+  });
+  try {
+    await DB.writeAppDoc(code, { ...appHeader(c), schede });
+    if (old) await DB.deleteAppDoc(old).catch(()=>{});
+    (c.schede||[]).forEach(s => { if (s.inviataAt) s.inviataHash = schedaHash(s); });
+    DB.updateClient(c.id, { appCode: code, schede: c.schede });
+    toast('Nuovo codice generato ✓', 'ok');
+    renderPage(); openAppAccessModal();
+  } catch (e) { toast('Operazione non riuscita: controlla la connessione', 'warn'); }
+}
+
+function copyText(t) {
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+    .then(() => toast('Copiato ✓', 'ok'))
+    .catch(() => { const el = document.getElementById('app-url'); if (el) { el.select(); document.execCommand('copy'); toast('Copiato ✓','ok'); } });
 }
 
 // ── PRINT ─────────────────────────────────────────────────────────────────────
