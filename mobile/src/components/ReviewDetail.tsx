@@ -5,7 +5,7 @@ import { fmtDate } from '@/lib/format';
 import { must, useData } from '@/lib/hooks';
 import { supabase } from '@/lib/supabase';
 import type { ProgramReview } from '@/lib/types';
-import { Card, Icon, Loading, Row, Screen, SectionTitle, Stat, Txt } from './ui';
+import { Badge, Card, Icon, Loading, Row, Screen, SectionTitle, Stat, Txt } from './ui';
 
 const DIFFICULTY = ['Troppo facile', 'Facile', 'Giusta', 'Impegnativa', 'Troppo dura'];
 const DURATION = ['Troppo corte', 'Un po\' corte', 'Giuste', 'Un po\' lunghe', 'Troppo lunghe'];
@@ -14,6 +14,7 @@ const DURATION = ['Troppo corte', 'Un po\' corte', 'Giuste', 'Un po\' lunghe', '
 export function reviewSummary(r: ProgramReview) {
   return [
     r.overall ? `Soddisfazione ${r.overall}/5` : '',
+    r.adherence_pct != null ? `aderenza ${r.adherence_pct}%` : '',
     r.difficulty ? `difficoltà: ${DIFFICULTY[r.difficulty - 1]!.toLowerCase()}` : '',
     r.days_per_week ? `${r.days_per_week} giorni/sett.` : '',
     r.session_minutes ? `${r.session_minutes} min` : '',
@@ -48,9 +49,13 @@ export function ReviewDetail({ id }: { id: string }) {
       <SectionTitle>Valutazione</SectionTitle>
       <Row gap={8}>
         <Stat value={r.overall ? `${r.overall}/5` : '—'} label="Soddisfazione" />
-        <Stat value={r.enjoyment ? `${r.enjoyment}/5` : '—'} label="Gradimento" color={colors.blue} />
-        <Stat value={r.results ? `${r.results}/5` : '—'} label="Risultati" color={colors.green} />
+        <Stat value={r.adherence_pct != null ? `${r.adherence_pct}%` : r.adherence ? `${r.adherence}/5` : '—'} label="Aderenza"
+          color={(r.adherence_pct ?? 100) >= 80 ? colors.green : (r.adherence_pct ?? 100) >= 50 ? colors.accent : colors.red} />
+        <Stat value={r.results ? `${r.results}/5` : '—'} label="Risultati" color={colors.blue} />
       </Row>
+      {r.adherence_pct != null && r.adherence ? (
+        <Txt v="small" style={{ marginTop: 6 }}>Aderenza reale {r.adherence_pct}% degli allenamenti previsti · percepita dal cliente {r.adherence}/5</Txt>
+      ) : null}
       <Row gap={8} style={{ marginTop: 8 }}>
         <View style={{ flex: 1 }}>
           <Card><Txt v="label">Difficoltà</Txt>
@@ -63,6 +68,13 @@ export function ReviewDetail({ id }: { id: string }) {
               {r.duration_ok ? DURATION[r.duration_ok - 1] : '—'}</Txt></Card>
         </View>
       </Row>
+
+      {r.stressors?.length ? (
+        <>
+          <SectionTitle>Fattori di stress esterni</SectionTitle>
+          <Row wrap gap={8}>{r.stressors.map(x => <Badge key={x} label={x} color={colors.red} />)}</Row>
+        </>
+      ) : null}
 
       <SectionTitle>Per la prossima scheda</SectionTitle>
       <Row gap={8} style={{ marginBottom: 10 }}>

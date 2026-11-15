@@ -158,6 +158,8 @@ const step = (m) => console.log('▶', m);
   const pick = async (scaleIdx, v) => scales.nth(scaleIdx * 5 + (v - 1)).click();
   await pick(0, 4); await pick(1, 4); await pick(2, 5); await pick(3, 4); await pick(4, 3);
   const ta = C.locator('textarea');
+  await C.getByText('Lavoro', { exact: true }).click();
+  await C.getByText('Sonno', { exact: true }).click();
   await ta.nth(0).fill('Panca e croci, il giorno A in generale');
   await ta.nth(1).fill('Niente da togliere, aggiungerei gambe');
   await ta.nth(2).fill('Leggero fastidio alla spalla destra nelle ultime serie di panca');

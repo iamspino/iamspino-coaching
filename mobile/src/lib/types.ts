@@ -155,6 +155,9 @@ export interface ProgramReview {
   overall: number | null;
   difficulty: number | null;
   enjoyment: number | null;
+  adherence: number | null;
+  adherence_pct: number | null;
+  stressors: string[];
   results: number | null;
   duration_ok: number | null;
   liked: string;

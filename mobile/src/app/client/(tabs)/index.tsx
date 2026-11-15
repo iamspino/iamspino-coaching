@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 import { Button, Card, Empty, Icon, ListItem, Row, Screen, SectionTitle, Txt } from '@/components/ui';
 import { colors } from '@/config';
+import { weeklyGoal } from '@/lib/adherence';
 import { useAuth } from '@/lib/auth';
 import { currentWeek, fmtDate, timeAgo } from '@/lib/format';
 import { must, useData } from '@/lib/hooks';
@@ -38,7 +39,7 @@ export default function Today() {
   const logs = data?.logs ?? [];
   const resume = logs.find(l => !l.completed_at && Date.now() - new Date(l.started_at).getTime() < 12 * 3600000);
   const weekAgo = Date.now() - 7 * 86400000;
-  const doneThisWeek = logs.filter(l => l.completed_at && new Date(l.completed_at).getTime() > weekAgo).length;
+  const week = weeklyGoal(data?.programs ?? [], logs);
   const checkInDue = data && (!data.lastCheckIn || new Date(data.lastCheckIn.date).getTime() < weekAgo);
   const comments = logs.filter(l => l.trainer_comment && new Date(l.started_at).getTime() > Date.now() - 14 * 86400000).slice(0, 2);
 
@@ -47,8 +48,20 @@ export default function Today() {
       <Txt v="muted">{hello},</Txt>
       <Txt v="display">{first} 💪</Txt>
       <Row gap={8} style={{ marginTop: 8, marginBottom: 6 }}>
-        <Icon name="flame" size={18} color={colors.accent} />
-        <Txt v="muted">{doneThisWeek} allenament{doneThisWeek === 1 ? 'o' : 'i'} negli ultimi 7 giorni</Txt>
+        {week.goal > 0 ? (
+          <>
+            <Row gap={5}>
+              {Array.from({ length: week.goal }, (_, i) => (
+                <View key={i} style={{ width: 14, height: 14, borderRadius: 7, borderWidth: 2,
+                  borderColor: i < week.done ? colors.green : colors.surface3, backgroundColor: i < week.done ? colors.green : 'transparent' }} />
+              ))}
+            </Row>
+            <Txt v="muted" style={{ flex: 1 }}>
+              {week.done >= week.goal ? 'Settimana completata ✅' : `Questa settimana: ${week.done} di ${week.goal}`}
+            </Txt>
+            {week.streak > 1 ? <Txt v="small" color={colors.accent} style={{ fontWeight: '700' }}>🔥 {week.streak} settimane di fila</Txt> : null}
+          </>
+        ) : null}
       </Row>
 
       {resume ? (

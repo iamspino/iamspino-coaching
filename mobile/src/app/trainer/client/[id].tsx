@@ -10,6 +10,7 @@ import { colors } from '@/config';
 import { fmtDate, timeAgo } from '@/lib/format';
 import { must, useData } from '@/lib/hooks';
 import { errorMessage, supabase } from '@/lib/supabase';
+import { programAdherence } from '@/lib/adherence';
 import { PROGRAM_STATUS } from '@/lib/program';
 import { reviewSummary } from '@/components/ReviewDetail';
 import type { Client, Program, ProgramReview } from '@/lib/types';
@@ -23,13 +24,22 @@ export default function ClientDetail() {
   const { data, setData } = useData(async () => {
     const [c, p, t, n, rv] = await Promise.all([
       supabase.from('clients').select('*, profiles(full_name)').eq('id', id).single(),
-      supabase.from('programs').select('*').eq('client_id', id).order('created_at', { ascending: false }),
+      supabase.from('programs').select('*, workouts(id)').eq('client_id', id).order('created_at', { ascending: false }),
       supabase.from('programs').select('id, name, weeks').is('client_id', null).order('name'),
       supabase.from('client_notes').select('notes').eq('client_id', id).maybeSingle(),
       supabase.from('program_reviews').select('*').eq('client_id', id).order('created_at', { ascending: false }),
     ]);
+    const programs = must(p) as Program[];
+    const active = programs.find(x => x.status === 'active');
+    let adherence: number | null = null;
+    if (active) {
+      const { count } = await supabase.from('workout_logs').select('id', { count: 'exact', head: true })
+        .eq('program_id', active.id).not('completed_at', 'is', null);
+      adherence = programAdherence(active, active.workouts?.length ?? 0, count ?? 0);
+    }
     return {
-      client: must(c) as Client, programs: must(p) as Program[],
+      adherence,
+      client: must(c) as Client, programs,
       templates: must(t) as Pick<Program, 'id' | 'name' | 'weeks'>[], notes: (n.data?.notes as string) ?? '',
       reviews: must(rv) as ProgramReview[],
     };
@@ -51,6 +61,13 @@ export default function ClientDetail() {
           <Txt v="title" numberOfLines={1}>{name}</Txt>
           <Txt v="muted" numberOfLines={1}>{client.goal || `Cliente dal ${fmtDate(client.created_at, true)}`}</Txt>
         </View>
+        {data.adherence != null ? (
+          <View style={{ alignItems: 'center' }}>
+            <Txt style={{ fontSize: 22, fontWeight: '800' }}
+              color={data.adherence >= 80 ? colors.green : data.adherence >= 50 ? colors.accent : colors.red}>{data.adherence}%</Txt>
+            <Txt v="label" style={{ fontSize: 9 }}>Aderenza</Txt>
+          </View>
+        ) : null}
       </Row>
       <Segmented<Tab> value={tab} onChange={setTab} options={[
         { value: 'programs', label: 'Schede' }, { value: 'progress', label: 'Progressi' }, { value: 'profile', label: 'Profilo' },
