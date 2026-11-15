@@ -50,9 +50,11 @@ export function openFromNotification(data: Record<string, unknown> | undefined, 
   if (role === 'trainer') {
     if (type === 'message') router.push(`/trainer/chat/${data.clientId}`);
     else if (type === 'workout' && data.logId) router.push(`/trainer/log/${data.logId}`);
+    else if (type === 'review' && data.reviewId) router.push(`/trainer/review/${data.reviewId}`);
     else if (data.clientId) router.push(`/trainer/client/${data.clientId}`);
   } else {
     if (type === 'message') router.push('/client/chat');
     else if (type === 'program' && data.programId) router.push(`/client/program/${data.programId}`);
+    else if (type === 'review_request' && data.programId) router.push(`/client/review/${data.programId}`);
   }
 }

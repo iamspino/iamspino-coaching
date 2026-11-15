@@ -8,18 +8,28 @@ import { must, useData } from '@/lib/hooks';
 import { supabase } from '@/lib/supabase';
 import type { CheckIn, Program, WorkoutLog } from '@/lib/types';
 
+type ProgramWithWorkouts = Program;
+
 export default function Today() {
   const { profile, trainer } = useAuth();
   const { data, loading, reload } = useData(async () => {
-    const [p, l, c] = await Promise.all([
+    const [p, l, c, rv] = await Promise.all([
       supabase.from('programs').select('*, workouts(id, name, position, workout_exercises(id))')
-        .eq('client_id', profile!.id).eq('status', 'active').order('sent_at', { ascending: false }),
+        .eq('client_id', profile!.id).order('sent_at', { ascending: false }),
       supabase.from('workout_logs').select('*').eq('client_id', profile!.id).order('started_at', { ascending: false }).limit(60),
       supabase.from('check_ins').select('*').eq('client_id', profile!.id).order('date', { ascending: false }).limit(1),
+      supabase.from('program_reviews').select('program_id').eq('client_id', profile!.id),
     ]);
-    const programs = must(p) as Program[];
-    programs.forEach(x => x.workouts?.sort((a, b) => a.position - b.position));
-    return { programs, logs: must(l) as WorkoutLog[], lastCheckIn: (must(c) as CheckIn[])[0] ?? null };
+    const all = must(p) as ProgramWithWorkouts[];
+    all.forEach(x => x.workouts?.sort((a, b) => a.position - b.position));
+    const reviewed = new Set((must(rv) as { program_id: string | null }[]).map(r => r.program_id));
+    // questionario da compilare: richiesto dal coach, oppure scheda arrivata all'ultima settimana
+    const toReview = all.filter(x => !reviewed.has(x.id) &&
+      (x.review_requested_at || (x.status === 'active' && x.weeks > 1 && currentWeek(x) >= x.weeks)));
+    return {
+      programs: all.filter(x => x.status === 'active'), toReview,
+      logs: must(l) as WorkoutLog[], lastCheckIn: (must(c) as CheckIn[])[0] ?? null,
+    };
   }, [profile?.id]);
 
   const first = profile?.full_name.split(' ')[0] ?? '';
@@ -48,6 +58,17 @@ export default function Today() {
             <Icon name="chevron-forward" size={18} color={colors.muted} /></Row>
         </Card>
       ) : null}
+
+      {data?.toReview.map(p => (
+        <Card key={'rv' + p.id} highlight onPress={() => router.push(`/client/review/${p.id}`)}>
+          <Row><Icon name="clipboard" size={28} color={colors.accent} />
+            <View style={{ flex: 1 }}>
+              <Txt style={{ fontWeight: '700' }}>Com'è andata {p.name}?</Txt>
+              <Txt v="small">Compila il questionario finale: serve al coach per la tua prossima scheda</Txt>
+            </View>
+            <Icon name="chevron-forward" size={18} color={colors.muted} /></Row>
+        </Card>
+      ))}
 
       {data && data.programs.length === 0 ? (
         <Empty icon="barbell-outline" title="Nessuna scheda attiva"

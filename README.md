@@ -19,7 +19,9 @@ spazio separato e vede solo i propri clienti.
   invio al cliente con notifica push.
 - Libreria esercizi: 85 esercizi comuni + esercizi propri con link video.
 - Diario del cliente: serie eseguite con kg e ripetizioni, commento del coach.
-- Progressi: grafici di peso e misure, massimale stimato per esercizio, foto.
+- Progressi: grafici di peso e misure, massimale stimato per esercizio, **confronto foto prima/dopo**.
+- **Questionario di fine scheda**: lo richiede il coach (o compare da solo nell'ultima settimana); resta nella
+  cartella del cliente anche se la scheda viene eliminata e viene mostrato quando si crea la scheda successiva.
 - Chat in tempo reale con ogni cliente.
 
 **Cliente**
@@ -36,7 +38,7 @@ spazio separato e vede solo i propri clienti.
 |---|---|
 | `mobile/` | App Expo (React Native + TypeScript, Expo Router). `src/app/trainer/…` e `src/app/client/…` sono le due aree. |
 | `supabase/migrations/` | Database: tabelle, regole di sicurezza (RLS), notifiche push, libreria esercizi. |
-| `supabase/tests/security.test.mjs` | 47 controlli che i dati siano isolati tra trainer e clienti. |
+| `supabase/tests/security.test.mjs` | 54 controlli che i dati siano isolati tra trainer e clienti. |
 | `mobile/e2e/flow.test.js` | Test completo nel browser: registrazione, invito, scheda, allenamento, chat, check-in. |
 | `index.html`, `cliente.html` | Vecchio gestionale IamSpino (Firebase). Vedi `LEGACY_IAMSPINO.md`. |
 

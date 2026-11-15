@@ -83,6 +83,7 @@ export interface Program {
   status: 'draft' | 'active' | 'archived';
   start_date: string | null;
   sent_at: string | null;
+  review_requested_at: string | null;
   created_at: string;
   updated_at: string;
   workouts?: Workout[];
@@ -143,5 +144,25 @@ export interface CheckIn {
   photos: string[];
   trainer_feedback: string;
   reviewed_at: string | null;
+  created_at: string;
+}
+
+export interface ProgramReview {
+  id: string;
+  client_id: string;
+  program_id: string | null;
+  program_name: string;
+  overall: number | null;
+  difficulty: number | null;
+  enjoyment: number | null;
+  results: number | null;
+  duration_ok: number | null;
+  liked: string;
+  disliked: string;
+  pain: string;
+  next_goal: string;
+  days_per_week: number | null;
+  session_minutes: number | null;
+  notes: string;
   created_at: string;
 }

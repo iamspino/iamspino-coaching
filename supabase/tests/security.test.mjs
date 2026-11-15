@@ -89,6 +89,18 @@ ok(!!tr.error,'client cannot change trainer');
 const {data:dup,error:de}=await A.c.rpc('duplicate_program',{src:prog.id,target_client:null,new_name:'Modello'});
 ok(!de && (await A.c.from('workout_exercises').select('id,workouts!inner(program_id)').eq('workouts.program_id',dup)).data.length===1,'duplicate '+(de?.message||''));
 ok(!!(await B.c.rpc('duplicate_program',{src:prog.id})).error,'B cannot duplicate');
+// questionario di fine scheda
+const rv=await C.c.from('program_reviews').insert({program_id:prog.id,program_name:prog.name,overall:4,difficulty:3,next_goal:'Forza',days_per_week:4}).select().single();
+ok(!rv.error,'client submits review '+(rv.error?.message||''));
+ok((await A.c.from('program_reviews').select()).data.length===1,'A sees review');
+ok((await B.c.from('program_reviews').select()).data.length===0,'B cannot see review');
+ok((await A.c.from('program_reviews').update({overall:1}).eq('id',rv.data.id).select()).data.length===0,'trainer cannot alter review');
+const {data:bProg}=await B.c.from('programs').insert({name:'di B'}).select().single();
+ok(!!(await C.c.from('program_reviews').insert({program_id:bProg.id,program_name:'x'})).error,'client cannot review foreign program');
+ok(!(await A.c.from('programs').update({review_requested_at:new Date().toISOString()}).eq('id',prog.id)).error,'A requests review');
+await A.c.from('programs').delete().eq('id',prog.id);
+const kept=(await A.c.from('program_reviews').select()).data;
+ok(kept.length===1 && kept[0].program_id===null && kept[0].program_name==='Ipertrofia 1','review survives program deletion');
 // delete account
 const D=await signup({role:'trainer',full_name:'Del'});
 ok(!(await D.c.rpc('delete_my_account')).error,'delete account');

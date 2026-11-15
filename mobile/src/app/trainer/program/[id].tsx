@@ -23,7 +23,8 @@ export default function ProgramEditor() {
       const { data: c } = await supabase.from('profiles').select('full_name').eq('id', p.client_id).single();
       clientName = c?.full_name ?? '';
     }
-    return { program: p, clientName };
+    const { data: rv } = await supabase.from('program_reviews').select('id').eq('program_id', id).maybeSingle();
+    return { program: p, clientName, reviewId: (rv?.id as string | undefined) ?? null };
   }, [id]);
   const [busy, setBusy] = useState<string | null>(null);
   const [assigning, setAssigning] = useState<Client[] | null>(null);
@@ -56,6 +57,12 @@ export default function ProgramEditor() {
     await patch({ status: 'active', sent_at: new Date().toISOString(), start_date: p.start_date ?? new Date().toISOString().slice(0, 10) });
     setBusy(null);
     notify('Scheda inviata ✓');
+  }
+
+  async function requestReview() {
+    if (!(await confirm('Richiedi questionario finale', `${clientName} riceverà una notifica e potrà compilare il questionario di fine scheda.`, 'Richiedi', false))) return;
+    await patch({ review_requested_at: new Date().toISOString() });
+    notify('Richiesta inviata ✓');
   }
 
   async function saveAsTemplate() {
@@ -121,6 +128,12 @@ export default function ProgramEditor() {
         </Card>
       ) : null}
       <Spacer h={10} />
+      {!isTemplate && data.reviewId ? (
+        <Button title="Vedi questionario finale" icon="clipboard" variant="ghost" onPress={() => router.push(`/trainer/review/${data.reviewId}`)} style={{ marginBottom: 10 }} />
+      ) : !isTemplate && p.sent_at ? (
+        <Button title={p.review_requested_at ? 'Questionario richiesto · invia di nuovo' : 'Richiedi questionario finale'} icon="clipboard-outline"
+          variant="ghost" onPress={requestReview} style={{ marginBottom: 10 }} />
+      ) : null}
       {!isTemplate ? <Button title="Salva come modello" icon="copy-outline" variant="ghost" onPress={saveAsTemplate} loading={busy === 'tpl'} /> : null}
       {!isTemplate && p.status === 'active' ? (
         <Button title="Archivia (il cliente non la vedrà più tra le attive)" variant="ghost" small style={{ marginTop: 10 }}

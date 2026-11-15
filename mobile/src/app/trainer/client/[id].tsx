@@ -11,7 +11,8 @@ import { fmtDate, timeAgo } from '@/lib/format';
 import { must, useData } from '@/lib/hooks';
 import { errorMessage, supabase } from '@/lib/supabase';
 import { PROGRAM_STATUS } from '@/lib/program';
-import type { Client, Program } from '@/lib/types';
+import { reviewSummary } from '@/components/ReviewDetail';
+import type { Client, Program, ProgramReview } from '@/lib/types';
 
 type Tab = 'programs' | 'progress' | 'profile';
 
@@ -20,15 +21,17 @@ export default function ClientDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [tab, setTab] = useState<Tab>('programs');
   const { data, setData } = useData(async () => {
-    const [c, p, t, n] = await Promise.all([
+    const [c, p, t, n, rv] = await Promise.all([
       supabase.from('clients').select('*, profiles(full_name)').eq('id', id).single(),
       supabase.from('programs').select('*').eq('client_id', id).order('created_at', { ascending: false }),
       supabase.from('programs').select('id, name, weeks').is('client_id', null).order('name'),
       supabase.from('client_notes').select('notes').eq('client_id', id).maybeSingle(),
+      supabase.from('program_reviews').select('*').eq('client_id', id).order('created_at', { ascending: false }),
     ]);
     return {
       client: must(c) as Client, programs: must(p) as Program[],
       templates: must(t) as Pick<Program, 'id' | 'name' | 'weeks'>[], notes: (n.data?.notes as string) ?? '',
+      reviews: must(rv) as ProgramReview[],
     };
   }, [id]);
 
@@ -53,16 +56,17 @@ export default function ClientDetail() {
         { value: 'programs', label: 'Schede' }, { value: 'progress', label: 'Progressi' }, { value: 'profile', label: 'Profilo' },
       ]} />
       <Spacer h={14} />
-      {tab === 'programs' ? <ProgramsTab clientId={id} programs={data.programs} templates={data.templates} />
+      {tab === 'programs' ? <ProgramsTab clientId={id} programs={data.programs} templates={data.templates} reviews={data.reviews} />
         : tab === 'progress' ? <ProgressView clientId={id} basePath="/trainer" />
         : <ProfileTab client={client} notes={data.notes} onSaved={(c, n) => setData({ ...data, client: c, notes: n })} />}
     </Screen>
   );
 }
 
-function ProgramsTab({ clientId, programs, templates }: {
-  clientId: string; programs: Program[]; templates: Pick<Program, 'id' | 'name' | 'weeks'>[];
+function ProgramsTab({ clientId, programs, templates, reviews }: {
+  clientId: string; programs: Program[]; templates: Pick<Program, 'id' | 'name' | 'weeks'>[]; reviews: ProgramReview[];
 }) {
+  const lastReview = reviews[0];
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -88,6 +92,14 @@ function ProgramsTab({ clientId, programs, templates }: {
       {picking ? (
         <Card highlight>
           <Txt v="h2" style={{ marginBottom: 10 }}>Nuova scheda</Txt>
+          {lastReview ? (
+            <Card onPress={() => router.push(`/trainer/review/${lastReview.id}`)} style={{ backgroundColor: colors.surface2 }}>
+              <Txt v="label" color={colors.accent}>Ultimo questionario · {lastReview.program_name}</Txt>
+              <Txt v="small" style={{ marginTop: 4 }}>{reviewSummary(lastReview)}</Txt>
+              {lastReview.next_goal ? <Txt style={{ marginTop: 6 }} numberOfLines={2}>🎯 {lastReview.next_goal}</Txt> : null}
+              {lastReview.pain ? <Txt style={{ marginTop: 4 }} color={colors.red} numberOfLines={2}>⚠️ {lastReview.pain}</Txt> : null}
+            </Card>
+          ) : null}
           <Button title="Parti da zero" icon="add" onPress={createBlank} loading={busy} />
           {templates.length ? <Txt v="label" style={{ marginTop: 16, marginBottom: 8 }}>Oppure da un modello</Txt> : null}
           <Row wrap gap={8}>{templates.map(t => <Chip key={t.id} label={`${t.name} · ${t.weeks} sett.`} onPress={() => fromTemplate(t.id)} />)}</Row>
@@ -105,6 +117,17 @@ function ProgramsTab({ clientId, programs, templates }: {
       {programs.length === 0 && !picking ? <Txt v="muted" center style={{ marginTop: 20 }}>Nessuna scheda per questo cliente.</Txt> : null}
       <Spacer h={6} />
       {programs.length > 0 ? <Txt v="small" center>Le bozze non sono visibili al cliente finché non le invii.</Txt> : null}
+      {reviews.length > 0 ? (
+        <>
+          <SectionTitle>Questionari di fine scheda</SectionTitle>
+          {reviews.map(r => (
+            <ListItem key={r.id} onPress={() => router.push(`/trainer/review/${r.id}`)}
+              left={<Icon name="clipboard" size={22} color={colors.accent} />}
+              title={r.program_name || 'Scheda'}
+              subtitle={`${fmtDate(r.created_at, true)} · ${reviewSummary(r)}`} />
+          ))}
+        </>
+      ) : null}
     </View>
   );
 }

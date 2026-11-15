@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { colors } from '@/config';
 import { estimated1RM, fmtDate, fmtDuration } from '@/lib/format';
 import { must, useData } from '@/lib/hooks';
 import { supabase } from '@/lib/supabase';
 import type { CheckIn, WorkoutLog } from '@/lib/types';
+import { usePhotoUrls } from './CheckInDetail';
 import { LineChart } from './LineChart';
 import { Badge, Card, Chip, Empty, Icon, ListItem, Row, SectionTitle, Segmented, Txt } from './ui';
 
@@ -65,6 +66,7 @@ function BodyTab({ checkins, basePath }: { checkins: CheckIn[]; basePath: string
           <Card><LineChart points={points} unit={m.unit} color={m.color} /></Card>
         </>
       ) : null}
+      <PhotoCompare checkins={checkins} />
       <SectionTitle>Check-in</SectionTitle>
       {[...checkins].reverse().map(c => (
         <ListItem key={c.id}
@@ -139,4 +141,54 @@ export function FeelingRow({ value }: { value: number | null }) {
   if (!value) return null;
   const faces = ['😫', '😕', '😐', '🙂', '💪'];
   return <Row gap={6}><Txt>{faces[value - 1]}</Txt><Txt v="muted">Sensazione {value}/5</Txt></Row>;
+}
+
+/** Confronto foto prima/dopo tra due check-in. */
+function PhotoCompare({ checkins }: { checkins: CheckIn[] }) {
+  const withPhotos = checkins.filter(c => c.photos.length > 0);
+  const [beforeId, setBeforeId] = useState<string | null>(null);
+  const [afterId, setAfterId] = useState<string | null>(null);
+  const [pose, setPose] = useState(0);
+  const before = withPhotos.find(c => c.id === beforeId) ?? withPhotos[0];
+  const after = withPhotos.find(c => c.id === afterId) ?? withPhotos[withPhotos.length - 1];
+  const poses = Math.min(before?.photos.length ?? 0, after?.photos.length ?? 0);
+  const idx = Math.min(pose, Math.max(0, poses - 1));
+  const urls = usePhotoUrls(before && after ? [before.photos[idx]!, after.photos[idx]!] : []);
+
+  if (withPhotos.length < 2 || !before || !after) return null;
+  const days = Math.round((new Date(after.date).getTime() - new Date(before.date).getTime()) / 86400000);
+  const dw = before.weight != null && after.weight != null ? Number(after.weight) - Number(before.weight) : null;
+
+  const side = (label: string, c: CheckIn, url: string | undefined, selected: string, onPick: (id: string) => void) => (
+    <View style={{ flex: 1 }}>
+      <Txt v="label" style={{ marginBottom: 6 }}>{label}</Txt>
+      {url ? <Image source={{ uri: url }} style={{ width: '100%', aspectRatio: 0.75, borderRadius: 12, backgroundColor: colors.surface2 }} />
+        : <View style={{ width: '100%', aspectRatio: 0.75, borderRadius: 12, backgroundColor: colors.surface2 }} />}
+      <Txt style={{ fontWeight: '700', marginTop: 6 }}>{fmtDate(c.date, true)}</Txt>
+      <Txt v="small">{c.weight != null ? `${c.weight} kg` : ' '}</Txt>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginTop: 8 }}>
+        {withPhotos.map(x => <Chip key={x.id} label={fmtDate(x.date)} on={x.id === selected} onPress={() => onPick(x.id)} />)}
+      </ScrollView>
+    </View>
+  );
+
+  return (
+    <View>
+      <SectionTitle right={<Txt v="small" color={colors.accent} style={{ fontWeight: '700' }}>
+        {days} giorni{dw != null ? ` · ${dw > 0 ? '+' : ''}${dw.toFixed(1).replace('.', ',')} kg` : ''}</Txt>}>
+        Prima e dopo
+      </SectionTitle>
+      <Card>
+        <Row gap={10} style={{ alignItems: 'flex-start' }}>
+          {side('Prima', before, urls[0], before.id, setBeforeId)}
+          {side('Dopo', after, urls[1], after.id, setAfterId)}
+        </Row>
+        {poses > 1 ? (
+          <Row gap={8} style={{ marginTop: 12, justifyContent: 'center' }}>
+            {Array.from({ length: poses }, (_, i) => <Chip key={i} label={`Foto ${i + 1}`} on={i === idx} onPress={() => setPose(i)} />)}
+          </Row>
+        ) : null}
+      </Card>
+    </View>
+  );
 }

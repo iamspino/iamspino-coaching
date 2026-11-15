@@ -6,17 +6,18 @@ import { useAuth } from '@/lib/auth';
 import { fmtDuration, timeAgo } from '@/lib/format';
 import { must, useData } from '@/lib/hooks';
 import { supabase } from '@/lib/supabase';
-import type { CheckIn, Client, Message, WorkoutLog } from '@/lib/types';
+import type { CheckIn, Client, Message, ProgramReview, WorkoutLog } from '@/lib/types';
 
 export default function TrainerHome() {
   const { profile, trainer } = useAuth();
   const { data, loading, reload } = useData(async () => {
     const since = new Date(Date.now() - 7 * 86400000).toISOString();
-    const [clients, logs, checkins, unread] = await Promise.all([
+    const [clients, logs, checkins, unread, reviews] = await Promise.all([
       supabase.from('clients').select('*, profiles(full_name)').neq('status', 'archived'),
       supabase.from('workout_logs').select('*').not('completed_at', 'is', null).order('completed_at', { ascending: false }).limit(40),
       supabase.from('check_ins').select('*').is('reviewed_at', null).order('created_at', { ascending: false }),
       supabase.from('messages').select('*').neq('sender_id', profile!.id).is('read_at', null),
+      supabase.from('program_reviews').select('*').gte('created_at', since).order('created_at', { ascending: false }),
     ]);
     const cl = must(clients) as Client[];
     const lg = must(logs) as WorkoutLog[];
@@ -29,6 +30,7 @@ export default function TrainerHome() {
       week: lg.filter(l => l.completed_at! >= since).length,
       checkins: must(checkins) as CheckIn[],
       unread: must(unread) as Message[],
+      reviews: must(reviews) as ProgramReview[],
       inactive: cl.filter(c => c.status === 'active' && (lastActivity.get(c.id) ?? '') < since),
       lastActivity,
     };
@@ -67,9 +69,16 @@ export default function TrainerHome() {
           action={<Button title="Invita il primo cliente" icon="person-add-outline" onPress={() => router.push('/trainer/invite')} />} />
       ) : null}
 
-      {data && (data.checkins.length > 0 || unreadByClient.size > 0) ? (
+      {data && (data.checkins.length > 0 || unreadByClient.size > 0 || data.reviews.length > 0) ? (
         <>
           <SectionTitle>Da fare</SectionTitle>
+          {data.reviews.map(r => (
+            <ListItem key={r.id} onPress={() => router.push(`/trainer/review/${r.id}`)}
+              left={<Avatar name={data.names.get(r.client_id) ?? ''} size={38} />}
+              title={data.names.get(r.client_id) ?? 'Cliente'}
+              subtitle={`Ha finito ${r.program_name}: prepara la prossima scheda · ${timeAgo(r.created_at)}`}
+              right={<Badge label="Questionario" color={colors.accent} />} />
+          ))}
           {data.checkins.map(c => (
             <ListItem key={c.id} onPress={() => router.push(`/trainer/checkin/${c.id}`)}
               left={<Avatar name={data.names.get(c.client_id) ?? ''} size={38} />}
