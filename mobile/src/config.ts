@@ -4,7 +4,10 @@
 export const APP_NAME = 'CoachPro';
 export const APP_TAGLINE = 'Il gestionale per personal trainer';
 
-export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321';
+const envUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321';
+// "origin" = stesso indirizzo da cui è servita la versione web (app e Supabase dietro un unico dominio)
+export const SUPABASE_URL =
+  envUrl === 'origin' && typeof window !== 'undefined' && window.location ? window.location.origin : envUrl;
 export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 export const colors = {
