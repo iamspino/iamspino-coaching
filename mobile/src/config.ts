@@ -16,7 +16,7 @@ export const colors = {
   text: '#f2f2f2',
   muted: '#8a8a8a',
   muted2: '#b0b0b0',
-  accent: '#f5c518',
+  accent: '#c6f432',        // colore principale del marchio (lime)
   accentText: '#111111',   // colore del testo sopra il colore principale
   warn: '#f5b800',         // giallo "attenzione" (non è il colore del marchio)
   green: '#4caf50',
