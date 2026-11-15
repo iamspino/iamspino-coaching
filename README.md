@@ -1,49 +1,78 @@
-# IamSpino Coaching
+# CoachPro (nome provvisorio)
 
-Due app che condividono lo stesso database Firebase:
+Gestionale per personal trainer, in stile Coach Plus: un'unica app per **iOS, Android e web**
+in cui il trainer gestisce i clienti e il cliente segue schede, chat e progressi.
+Il prodotto è pensato per essere venduto in abbonamento a più trainer: ogni trainer ha il suo
+spazio separato e vede solo i propri clienti.
 
-| File | Per chi | Cosa fa |
-|---|---|---|
-| `index.html` | Coach | Gestionale: clienti, schede, progressi, nutrizione, pagamenti. **Invia le schede in app** ai clienti. |
-| `cliente.html` | Clienti | App da telefono: il cliente vede le sue schede, settimana per settimana, con timer di recupero e video. |
+> Il nome si cambia in `mobile/src/config.ts` (`APP_NAME`) e in `mobile/app.json`.
 
-## Come si invia una scheda
+## Cosa c'è nella prima versione (MVP)
 
-1. Nel gestionale apri **Schede**, scegli il cliente e prepara la scheda.
-2. Premi **📲 Invia in app** (puoi aggiungere un messaggio per il cliente).
-3. Al primo invio si apre la finestra **Accesso App** con il codice personale del cliente e il link:
-   premi **💬 Invia su WhatsApp** per mandarglielo.
-4. Se poi modifichi la scheda compare **⚠ Modifiche non inviate**: premi **Reinvia in app** e il cliente
-   la vede aggiornata subito (riceve anche un avviso "Scheda aggiornata dal coach").
-5. **Ritira** toglie la scheda dall'app del cliente (resta salvata nel gestionale).
-   **Genera nuovo codice** disattiva il vecchio link.
+**Trainer**
+- Dashboard: clienti attivi, allenamenti della settimana, check-in da vedere, messaggi non letti,
+  clienti "da ricontattare" (nessun allenamento da 7 giorni), attività recente.
+- Clienti: inviti con codice personale (condivisibile su WhatsApp), stati attivo/pausa/archiviato,
+  note private che il cliente non vede.
+- Editor schede: giorni di allenamento, esercizi dalla libreria, serie/ripetizioni/carico/recupero/tempo,
+  superserie, **progressione settimana per settimana**, riordino, duplicazione, modelli riutilizzabili,
+  invio al cliente con notifica push.
+- Libreria esercizi: 85 esercizi comuni + esercizi propri con link video.
+- Diario del cliente: serie eseguite con kg e ripetizioni, commento del coach.
+- Progressi: grafici di peso e misure, massimale stimato per esercizio, foto.
+- Chat in tempo reale con ogni cliente.
 
-Il cliente vede solo le schede che gli hai inviato, mai i dati del gestionale (anamnesi, pagamenti…).
+**Cliente**
+- "Oggi": prossimo allenamento consigliato, settimana corrente, promemoria check-in, commenti del coach.
+- Allenamento guidato: kg e ripetizioni per serie, **confronto con l'ultima volta**, timer di recupero
+  con vibrazione (gestisce le superserie), video, sensazione e note finali.
+- Check-in con misure, sonno/energia/stress/aderenza e foto (private: solo cliente e coach).
+- Progressi, storico allenamenti, chat con il coach.
+- Eliminazione dell'account dall'app (richiesta da App Store e Play Store).
 
-## App cliente
+## Struttura
 
-- Apre il link → entra automaticamente (oppure inserisce il codice a mano).
-- Lista schede con badge **Nuova / Aggiornata**.
-- Dentro la scheda: scelta della settimana (Sett. 1…7), serie × ripetizioni e kg della settimana,
-  TUT, recupero, note, video, messaggio del coach.
-- Spunta degli esercizi fatti oggi, **timer di recupero** con vibrazione/suono, tabella completa.
-- Funziona anche offline e si può installare sul telefono ("Aggiungi a schermata Home").
+| Cartella | Contenuto |
+|---|---|
+| `mobile/` | App Expo (React Native + TypeScript, Expo Router). `src/app/trainer/…` e `src/app/client/…` sono le due aree. |
+| `supabase/migrations/` | Database: tabelle, regole di sicurezza (RLS), notifiche push, libreria esercizi. |
+| `supabase/tests/security.test.mjs` | 47 controlli che i dati siano isolati tra trainer e clienti. |
+| `mobile/e2e/flow.test.js` | Test completo nel browser: registrazione, invito, scheda, allenamento, chat, check-in. |
+| `index.html`, `cliente.html` | Vecchio gestionale IamSpino (Firebase). Vedi `LEGACY_IAMSPINO.md`. |
 
-## Pubblicazione (necessaria perché i clienti la aprano dal telefono)
+## Messa online: passi
 
-L'app cliente deve stare online. Il modo più semplice e gratuito è **GitHub Pages**:
-repository → *Settings* → *Pages* → *Deploy from a branch* → `main` / root.
-L'indirizzo sarà `https://iamspino.github.io/iamspino-coaching/cliente.html`.
+1. **Supabase** — crea un progetto su supabase.com (piano gratuito per iniziare), poi:
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref <id-progetto>
+   npx supabase db push          # crea tabelle, sicurezza e libreria esercizi
+   ```
+   In *Authentication → URL Configuration* imposta l'indirizzo dell'app; tieni attiva la conferma email.
+2. **App** — copia `mobile/.env.example` in `mobile/.env` con URL e anon key del progetto
+   (*Project Settings → API*). Poi `cd mobile && npm install && npx expo start`.
+3. **Store** — servono un account Apple Developer (99 $/anno) e Google Play (25 $ una tantum).
+   ```bash
+   npx eas-cli@latest build --platform all
+   npx eas-cli@latest submit --platform all
+   ```
+   Le notifiche push funzionano sulle build EAS (non su web).
 
-Se usi un indirizzo diverso, cambia la costante `CLIENT_APP_URL` in `index.html`
-(viene usata quando il gestionale è aperto come file locale o da Electron; se il gestionale è aperto
-dal sito, il link si calcola da solo).
+## Sviluppo locale
 
-## Regole Firestore
+```bash
+npx supabase start                 # database locale (serve Docker)
+cd mobile && npx expo start        # app (premi w per il web)
+ANON=<anon key locale> node ../supabase/tests/security.test.mjs
+npx tsc --noEmit
+```
 
-Copia `firestore.rules` in Firebase Console → Firestore → *Regole*.
-Impediscono di elencare i documenti dell'app cliente: una scheda si legge solo conoscendo il codice.
+## Prossimi passi consigliati
 
-> ⚠️ Il gestionale non ha ancora un login, quindi le raccolte `clienti` e `pagamenti` restano leggibili
-> da chiunque conosca la configurazione Firebase (che è nel codice della pagina). Il passo successivo
-> consigliato è attivare Firebase Authentication per il coach e limitare quelle raccolte al suo account.
+- **Pagamenti degli abbonamenti dei trainer** (Stripe). I limiti dei piani sono già nel database
+  (`trainers.plan`, `max_clients`) e il trainer non può modificarli dall'app.
+  Prima di vendere dentro l'app, verifica le regole di Apple e Google sugli acquisti digitali.
+- Nutrizione, abbonamenti/pagamenti dei clienti del trainer, calendario appuntamenti.
+- Video caricati direttamente (ora si usano link YouTube/Instagram/Vimeo).
+- Personalizzazione con logo e colori del trainer (white label), pannello web per il trainer.
+- Pagine Termini e Privacy (GDPR) e link reali in `AccountSettings.tsx`.
