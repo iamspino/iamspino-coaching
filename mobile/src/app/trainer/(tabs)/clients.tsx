@@ -11,7 +11,7 @@ import { shareInvite } from '@/lib/invite';
 type Filter = 'active' | 'paused' | 'archived';
 const STATUS: Record<Filter, { label: string; color: string }> = {
   active: { label: 'Attivo', color: colors.green },
-  paused: { label: 'In pausa', color: colors.accent },
+  paused: { label: 'In pausa', color: colors.warn },
   archived: { label: 'Archiviato', color: colors.muted },
 };
 

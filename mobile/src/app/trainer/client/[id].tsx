@@ -64,7 +64,7 @@ export default function ClientDetail() {
         {data.adherence != null ? (
           <View style={{ alignItems: 'center' }}>
             <Txt style={{ fontSize: 22, fontWeight: '800' }}
-              color={data.adherence >= 80 ? colors.green : data.adherence >= 50 ? colors.accent : colors.red}>{data.adherence}%</Txt>
+              color={data.adherence >= 80 ? colors.green : data.adherence >= 50 ? colors.warn : colors.red}>{data.adherence}%</Txt>
             <Txt v="label" style={{ fontSize: 9 }}>Aderenza</Txt>
           </View>
         ) : null}

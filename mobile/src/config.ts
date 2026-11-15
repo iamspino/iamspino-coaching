@@ -17,7 +17,8 @@ export const colors = {
   muted: '#8a8a8a',
   muted2: '#b0b0b0',
   accent: '#f5c518',
-  accentText: '#111111',
+  accentText: '#111111',   // colore del testo sopra il colore principale
+  warn: '#f5b800',         // giallo "attenzione" (non è il colore del marchio)
   green: '#4caf50',
   red: '#e05c2a',
   blue: '#4a9eff',

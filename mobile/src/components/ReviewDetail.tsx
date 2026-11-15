@@ -50,7 +50,7 @@ export function ReviewDetail({ id }: { id: string }) {
       <Row gap={8}>
         <Stat value={r.overall ? `${r.overall}/5` : '—'} label="Soddisfazione" />
         <Stat value={r.adherence_pct != null ? `${r.adherence_pct}%` : r.adherence ? `${r.adherence}/5` : '—'} label="Aderenza"
-          color={(r.adherence_pct ?? 100) >= 80 ? colors.green : (r.adherence_pct ?? 100) >= 50 ? colors.accent : colors.red} />
+          color={(r.adherence_pct ?? 100) >= 80 ? colors.green : (r.adherence_pct ?? 100) >= 50 ? colors.warn : colors.red} />
         <Stat value={r.results ? `${r.results}/5` : '—'} label="Risultati" color={colors.blue} />
       </Row>
       {r.adherence_pct != null && r.adherence ? (
@@ -59,12 +59,12 @@ export function ReviewDetail({ id }: { id: string }) {
       <Row gap={8} style={{ marginTop: 8 }}>
         <View style={{ flex: 1 }}>
           <Card><Txt v="label">Difficoltà</Txt>
-            <Txt style={{ fontWeight: '700', marginTop: 4 }} color={r.difficulty === 3 ? colors.green : colors.accent}>
+            <Txt style={{ fontWeight: '700', marginTop: 4 }} color={r.difficulty === 3 ? colors.green : colors.warn}>
               {r.difficulty ? DIFFICULTY[r.difficulty - 1] : '—'}</Txt></Card>
         </View>
         <View style={{ flex: 1 }}>
           <Card><Txt v="label">Durata sedute</Txt>
-            <Txt style={{ fontWeight: '700', marginTop: 4 }} color={r.duration_ok === 3 ? colors.green : colors.accent}>
+            <Txt style={{ fontWeight: '700', marginTop: 4 }} color={r.duration_ok === 3 ? colors.green : colors.warn}>
               {r.duration_ok ? DURATION[r.duration_ok - 1] : '—'}</Txt></Card>
         </View>
       </Row>
