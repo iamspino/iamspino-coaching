@@ -180,6 +180,24 @@ const step = (m) => console.log('▶', m);
   await T.getByText('Ultimo questionario', { exact: false }).waitFor();
   await shot(T, '18-new-program-with-review');
 
+  // Bozza AI: richiede la funzione draft-program avviata (FN_URL), es. con Deno e un endpoint AI di prova
+  if (process.env.FN_URL) {
+    step('AI draft');
+    await T.route('**/functions/v1/draft-program', route => route.continue({ url: process.env.FN_URL }));
+    await T.getByText('Bozza con AI').click();
+    await T.getByText('Su cosa si basa').waitFor();
+    await T.getByText('Gruppi muscolari', { exact: false }).waitFor({ timeout: 10000 });
+    await T.locator('textarea').fill('2 giorni a settimana, niente spinte sopra la testa');
+    await shot(T, '20-ai-draft');
+    await T.getByText('Genera bozza').click();
+    await T.getByText('Bozza AI · note visibili solo a te', { exact: false }).waitFor({ timeout: 60000 });
+    await T.waitForTimeout(800);
+    await shot(T, '21-ai-draft-result');
+    await T.mouse.wheel(0, 520);
+    await T.waitForTimeout(600);
+    await shot(T, '22-ai-draft-program');
+  }
+
   step('progress');
   await T.goto(BASE + '/trainer/clients');
   await T.getByText('Mario Rossi').first().click();

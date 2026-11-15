@@ -117,7 +117,8 @@ function ProgramsTab({ clientId, programs, templates, reviews }: {
               {lastReview.pain ? <Txt style={{ marginTop: 4 }} color={colors.red} numberOfLines={2}>⚠️ {lastReview.pain}</Txt> : null}
             </Card>
           ) : null}
-          <Button title="Parti da zero" icon="add" onPress={createBlank} loading={busy} />
+          <Button title="Bozza con AI" icon="sparkles" onPress={() => { setPicking(false); router.push(`/trainer/ai-draft/${clientId}`); }} />
+          <Button title="Parti da zero" icon="add" variant="ghost" onPress={createBlank} loading={busy} style={{ marginTop: 10 }} />
           {templates.length ? <Txt v="label" style={{ marginTop: 16, marginBottom: 8 }}>Oppure da un modello</Txt> : null}
           <Row wrap gap={8}>{templates.map(t => <Chip key={t.id} label={`${t.name} · ${t.weeks} sett.`} onPress={() => fromTemplate(t.id)} />)}</Row>
           <Button title="Annulla" variant="ghost" small onPress={() => setPicking(false)} style={{ marginTop: 14 }} />

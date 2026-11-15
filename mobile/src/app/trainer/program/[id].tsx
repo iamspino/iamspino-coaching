@@ -24,7 +24,8 @@ export default function ProgramEditor() {
       clientName = c?.full_name ?? '';
     }
     const { data: rv } = await supabase.from('program_reviews').select('id').eq('program_id', id).maybeSingle();
-    return { program: p, clientName, reviewId: (rv?.id as string | undefined) ?? null };
+    const { data: ai } = await supabase.from('ai_drafts').select('coach_notes').eq('program_id', id).maybeSingle();
+    return { program: p, clientName, reviewId: (rv?.id as string | undefined) ?? null, aiNotes: (ai?.coach_notes as string | undefined) ?? '' };
   }, [id]);
   const [busy, setBusy] = useState<string | null>(null);
   const [assigning, setAssigning] = useState<Client[] | null>(null);
@@ -98,6 +99,16 @@ export default function ProgramEditor() {
         <Badge label={isTemplate ? 'Modello' : PROGRAM_STATUS[p.status].label} color={isTemplate ? colors.blue : PROGRAM_STATUS[p.status].color} />
         {p.sent_at && !isTemplate ? <Txt v="small">inviata {timeAgo(p.sent_at)}</Txt> : null}
       </Row>
+      {data.aiNotes && p.status === 'draft' ? (
+        <Card highlight>
+          <Row gap={8} style={{ marginBottom: 6 }}>
+            <Icon name="sparkles" size={16} color={colors.accent} />
+            <Txt v="label" color={colors.accent}>Bozza AI · note visibili solo a te</Txt>
+          </Row>
+          <Txt>{data.aiNotes}</Txt>
+          <Txt v="small" style={{ marginTop: 8 }}>Controlla esercizi e carichi prima di inviare: la responsabilità della scheda resta tua.</Txt>
+        </Card>
+      ) : null}
       <InlineField value={p.name} onSave={name => patch({ name: name || 'Scheda' })} style={st.title} placeholder="Nome scheda" />
       <InlineField value={p.description} onSave={description => patch({ description })} style={st.desc} placeholder="Descrizione o indicazioni generali (facoltativo)" multiline />
 

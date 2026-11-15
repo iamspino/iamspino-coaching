@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import type { CheckIn, WorkoutLog } from '@/lib/types';
 import { usePhotoUrls } from './CheckInDetail';
 import { LineChart } from './LineChart';
+import { MuscleGroups } from './MuscleGroups';
 import { Badge, Card, Chip, Empty, Icon, ListItem, Row, SectionTitle, Segmented, Txt } from './ui';
 
 type Tab = 'body' | 'strength' | 'history';
@@ -33,7 +34,7 @@ export function ProgressView({ clientId, basePath }: { clientId: string; basePat
         { value: 'body', label: 'Corpo' }, { value: 'strength', label: 'Forza' }, { value: 'history', label: 'Diario' },
       ]} />
       {!data ? null : tab === 'body' ? <BodyTab checkins={data.checkins} basePath={basePath} />
-        : tab === 'strength' ? <StrengthTab logs={data.logs} />
+        : tab === 'strength' ? <StrengthTab logs={data.logs} clientId={clientId} />
         : <HistoryTab logs={data.logs} basePath={basePath} />}
     </View>
   );
@@ -81,7 +82,7 @@ function BodyTab({ checkins, basePath }: { checkins: CheckIn[]; basePath: string
   );
 }
 
-function StrengthTab({ logs }: { logs: WorkoutLog[] }) {
+function StrengthTab({ logs, clientId }: { logs: WorkoutLog[]; clientId: string }) {
   // Massimale stimato per sessione, per ogni esercizio
   const series = useMemo(() => {
     const byEx = new Map<string, { name: string; points: { date: string; value: number }[] }>();
@@ -113,7 +114,8 @@ function StrengthTab({ logs }: { logs: WorkoutLog[] }) {
         <Txt v="label" style={{ marginBottom: 6 }}>Massimale stimato · {current[1].name}</Txt>
         <LineChart points={current[1].points} unit=" kg" />
       </Card>
-      <Txt v="small">Il massimale è stimato dalla serie migliore di ogni allenamento (formula di Epley).</Txt>
+      <Txt v="small" style={{ marginBottom: 14 }}>Il massimale è stimato dalla serie migliore di ogni allenamento (formula di Epley).</Txt>
+      <MuscleGroups clientId={clientId} />
     </View>
   );
 }

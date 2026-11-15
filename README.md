@@ -23,6 +23,9 @@ spazio separato e vede solo i propri clienti.
 - **Questionario di fine scheda**: lo richiede il coach (o compare da solo nell'ultima settimana); resta nella
   cartella del cliente anche se la scheda viene eliminata e viene mostrato quando si crea la scheda successiva.
 - Chat in tempo reale con ogni cliente.
+- **Bozza AI della scheda successiva**: parte da questionario di fine scheda, scheda precedente, carichi recenti,
+  check-in e **analisi per gruppo muscolare** (volume settimanale e andamento della forza). Viene salvata come bozza
+  con note visibili solo al coach, che la corregge e decide se inviarla.
 
 **Cliente**
 - "Oggi": prossimo allenamento consigliato, settimana corrente, promemoria check-in, commenti del coach.
@@ -59,6 +62,22 @@ spazio separato e vede solo i propri clienti.
    npx eas-cli@latest submit --platform all
    ```
    Le notifiche push funzionano sulle build EAS (non su web).
+
+## Bozza AI: attivazione
+
+La bozza usa Claude tramite la funzione `supabase/functions/draft-program`. Serve una chiave API Anthropic
+(console.anthropic.com), che resta sul server e non finisce mai nell'app:
+
+```bash
+npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+npx supabase functions deploy draft-program
+```
+
+- Modello: `claude-opus-5-5`. Costo indicativo: 15-25 centesimi a bozza.
+- Limite mensile per piano (in `index.ts`, `MONTHLY_LIMIT`): prova 3, Starter 10, Pro 50, Studio 200.
+- All'AI non vengono inviati nome, email o foto del cliente. Vengono inviati dati di allenamento, misure,
+  obiettivi, dolori segnalati e note private del coach: va dichiarato nell'informativa privacy.
+- Test: `supabase/tests/ai-draft.test.mjs` (accessi, limiti, salvataggio della bozza).
 
 ## Sviluppo locale
 
